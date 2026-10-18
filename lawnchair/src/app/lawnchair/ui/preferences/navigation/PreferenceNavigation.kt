@@ -42,7 +42,6 @@ import app.lawnchair.ui.preferences.destinations.GesturePreferences
 import app.lawnchair.ui.preferences.destinations.HiddenAppsPreferences
 import app.lawnchair.ui.preferences.destinations.HomeScreenGridPreferences
 import app.lawnchair.ui.preferences.destinations.HomeScreenPreferences
-import app.lawnchair.ui.preferences.destinations.IconPackPreferences
 import app.lawnchair.ui.preferences.destinations.IconPickerPreference
 import app.lawnchair.ui.preferences.destinations.LauncherPopupPreference
 import app.lawnchair.ui.preferences.destinations.PickAppForGesture
@@ -56,6 +55,9 @@ import app.lawnchair.ui.preferences.destinations.SelectIconPreference
 import app.lawnchair.ui.preferences.destinations.SettingsSearchScreen
 import app.lawnchair.ui.preferences.destinations.ShapePreference
 import app.lawnchair.ui.preferences.destinations.SmartspacePreferences
+import app.lawnchair.ui.preferences.destinations.icons.AdvancedIconPreferences
+import app.lawnchair.ui.preferences.destinations.icons.IconPackPreferences
+import app.lawnchair.ui.preferences.destinations.icons.ThemedIconsPreferences
 import app.lawnchair.ui.preferences.destinations.WidgetPreferences
 import app.lawnchair.util.parseComponentKeyLenient
 import soup.compose.material.motion.animation.materialSharedAxisXIn
@@ -121,6 +123,12 @@ fun PreferenceNavigation(
         composable<GeneralIconPack>(
             deepLinks = getDeepLink(GeneralIconPack),
         ) { IconPackPreferences() }
+        composable<GeneralThemedIcons>(
+            deepLinks = getDeepLink(GeneralThemedIcons),
+        ) { ThemedIconsPreferences() }
+        composable<GeneralAdvancedIcons>(
+            deepLinks = getDeepLink(GeneralAdvancedIcons),
+        ) { AdvancedIconPreferences() }
         composable<GeneralIconShape> { backStackEntry ->
             val route: GeneralIconShape = backStackEntry.toRoute()
             ShapePreference(currentTab = route.selectedId)

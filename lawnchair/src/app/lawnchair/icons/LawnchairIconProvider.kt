@@ -74,14 +74,17 @@ class LawnchairIconProvider @Inject constructor(
     val themeMap: Map<String, ThemeData>
         get() = themeMapCache.get(themedIconsEnabled, themedSourcePackage, ::loadThemedIconMap)
 
-    val systemIconState = themeManager.iconState
-
     private fun resolveIconEntry(componentName: ComponentName, user: UserHandle): IconEntry? {
         val componentKey = ComponentKey(componentName, user)
         // first look for user-overridden icon
         val overrideItem = overrideRepo.overridesMap[componentKey]
         if (overrideItem != null) {
             return overrideItem.toIconEntry()
+        }
+
+        // if forced monochrome is enabled, fallback to launcher3 behavior
+        if (prefs.forceIconMonochrome.get()) {
+            return null
         }
 
         val iconPack = iconPack ?: return null
@@ -95,11 +98,9 @@ class LawnchairIconProvider @Inject constructor(
     }
 
     /**
-     * Resolves the launch component for icon-pack lookup.
-     *
-     * Avoid [android.content.pm.PackageManager.getLaunchIntentForPackage], which only sees the
-     * current user — work/private profile apps would otherwise fall back to the system icon.
-     * Prefer the real component from [ComponentInfo], then [LauncherApps] for the app's user.
+     * Resolves launch component and icon entry.
+     * This function tries to resolve the real component so that it works for non-default
+     * users (like work / private profiles)
      */
     private fun resolveComponentName(
         info: PackageItemInfo,
@@ -131,49 +132,107 @@ class LawnchairIconProvider @Inject constructor(
         val user = UserHandle.getUserHandleForUid(appInfo.uid)
         val componentName = resolveComponentName(info, appInfo, user)
 
+        // 1. Récupération des overrides et de l'entrée d'icône (Snippet 1)
         val explicitOverride = componentName?.let {
             overrideRepo.overridesMap[ComponentKey(it, user)]?.toIconEntry()
         }
         val iconEntry = explicitOverride ?: componentName?.let { resolveIconEntry(it, user) }
+
+        // 2. Résolution du calendrier dynamique si nécessaire
         val iconPackEntry = if (iconEntry?.type == IconType.Calendar) {
             iconEntry.resolveDynamicCalendar(getDay())
         } else {
             iconEntry
         }
-        // Lawnicons is a monochrome source even when selected in the ordinary icon-pack tab.
-        // A shared native base lets Home-only keep the drawer in the app's original colors.
-        // Individually chosen overrides remain intentional artwork on both surfaces.
+
+        // 3. Filtrage du pack d'icônes (Lawnicons / règles spécifiques du Snippet 1)
         val iconPackIcon = iconPackEntry
             ?.takeIf {
                 explicitOverride != null || unthemedIconPackPackage(it.packPackageName).isNotEmpty() ||
                     it.packPackageName.isEmpty()
             }
             ?.let { iconPackProvider.getDrawable(it, iconDpi, user) }
-        val baseIcon = iconPackIcon ?: super.getIcon(info, appInfo, iconDpi)
-        if (!themedIconsEnabled || baseIcon is ClockDrawableWrapper) return baseIcon
 
-        val themeData = getThemeDataForPackage(packageName)
+        val baseIcon = iconPackIcon ?: super.getIcon(info, appInfo, iconDpi)
+
+        // 4. Vérification si les icônes thématiques sont activées
+        if (!themedIconsEnabled || baseIcon is ClockDrawableWrapper || iconEntry == null) {
+            return baseIcon
+        }
+
+        // 5. Résolution de l'icône thématique via la méthode dédiée
+        return resolveThemedIcon(packageName, componentName, iconEntry, iconDpi, explicitOverride, iconPackIcon) ?: baseIcon
+    }
+
+    private fun resolveThemedIcon(
+        packageName: String,
+        componentName: ComponentName?,
+        iconEntry: IconEntry,
+        iconDpi: Int,
+        explicitOverride: IconEntry?,
+        iconPackIcon: Drawable?,
+    ): Drawable? {
+        val themedColors = ThemedIconDrawable.getColors(context)
+        val clock = iconPackProvider.getClockMetadata(iconEntry)
+
+        // Gestion spécifique Lawnicons (provenant du Snippet 1)
         val overrideMonochrome = if (explicitOverride?.packPackageName == LAWNICONS_PACKAGE_NAME) {
             (iconPackIcon as? AdaptiveIconDrawable)?.let { it.monochrome ?: it.foreground } ?: iconPackIcon
         } else {
             null
         }
-        val monochrome = overrideMonochrome ?: when (packageName) {
-            mCalendar?.packageName -> {
-                // Calendar theme maps can be arrays; the platform resolves today's entry.
-                (loadCalendarDrawable(iconDpi, themeData) as? AdaptiveIconDrawable)?.monochrome
-                    ?: themeData?.loadPaddedDrawable()
+
+        return when {
+            overrideMonochrome != null -> {
+                // Si un monochrome explicite Lawnicons existe, on l'utilise
+                val themedColorsArr = ThemedIconDrawable.getColors(context)
+                CustomAdaptiveIconDrawable(
+                    themedColorsArr[0].toDrawable(),
+                    overrideMonochrome.apply { setTint(themedColorsArr[1]) },
+                )
             }
 
-            mClock?.packageName -> {
-                ClockDrawableWrapper.forPackage(mContext, packageName, iconDpi)?.monochrome
-                    ?: ThemeData(context.resources, R.drawable.themed_icon_static_clock).loadPaddedDrawable()
+            clock != null -> {
+                // L'icône supporte l'horloge dynamique thématique
+                ClockDrawableWrapper.forPackage(mContext, mClock.packageName, iconDpi)?.getMonochrome()
             }
 
-            else -> themeData?.loadPaddedDrawable()
-        } ?: (baseIcon as? AdaptiveIconDrawable)?.monochrome
+            packageName == mClock.packageName -> {
+                // Application Horloge : fallback vers l'horloge statique thématique
+                val clockThemedData = ThemeData(context.resources, R.drawable.themed_icon_static_clock)
+                CustomAdaptiveIconDrawable(
+                    themedColors[0].toDrawable(),
+                    clockThemedData.loadPaddedDrawable().apply { setTint(themedColors[1]) },
+                )
+            }
 
-        return if (monochrome == null) baseIcon else ThemedIconLayer(baseIcon, monochrome)
+            packageName == mCalendar.packageName -> {
+                // Application Calendrier : applique l'icône calendrier dynamique
+                val themeData = getThemeDataForPackage(packageName)
+                loadCalendarDrawable(iconDpi, themeData)
+            }
+
+            else -> {
+                // Icône classique
+                val nativeThemed = componentName?.let { ThemedIconCompat.getThemedIcon(context, it) }
+                if (nativeThemed != null) {
+                    CustomAdaptiveIconDrawable(
+                        themedColors[0].toDrawable(),
+                        nativeThemed.apply { setTint(themedColors[1]) },
+                    )
+                } else {
+                    val themeData = getThemeDataForPackage(packageName)
+                    if (themeData != null) {
+                        CustomAdaptiveIconDrawable(
+                            themedColors[0].toDrawable(),
+                            themeData.loadPaddedDrawable().apply { setTint(themedColors[1]) },
+                        )
+                    } else {
+                        (baseIcon as? AdaptiveIconDrawable)?.monochrome
+                    }
+                }
+            }
+        }
     }
 
     override fun getStateForApp(info: ApplicationInfo?): String {
@@ -190,11 +249,13 @@ class LawnchairIconProvider @Inject constructor(
             "ti=${prefs.themedIcons.get()}," +
             "dti=${prefs.drawerThemedIcons.get()}," +
             "fm=${prefs.forceIconMonochrome.get()}," +
-            "tb=${prefs.tintIconPackBackgrounds.get()}," +
             "ov=$overrideState"
     }
 
     override fun getThemeDataForPackage(packageName: String?): ThemeData? {
+        if (prefs.forceIconMonochrome.get()) {
+            return null
+        }
         return themeMap[packageName]
     }
 
