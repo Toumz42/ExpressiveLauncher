@@ -64,6 +64,6 @@
 • <b>1-Click Add to Obtainium</b>: Add to Obtainium: <code>obtainium://add/https://github.com/denson9874/ExpressiveLauncher</code>
 • <b>GitHub Repository</b>: <a href="https://github.com/denson9874/ExpressiveLauncher">https://github.com/denson9874/ExpressiveLauncher</a>
 • <b>Community &amp; Feedback</b>: <a href="https://t.me/ExpressiveLauncherFeedback">@ExpressiveLauncherFeedback</a>
-• <b>Announcements Channel</b>: <a href="https://t.me/ExpressiveGroup">@ExpressiveGroup</a>
+• <b>Announcements Channel</b>: <a href="https://t.me/ExpressiveLauncher">@ExpressiveLauncher</a>
 
 Derived from Lawnchair and AOSP Launcher3; see the repository's license and upstream notices.

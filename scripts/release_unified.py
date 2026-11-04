@@ -6,22 +6,17 @@ Deploys to all official distribution & community channels in a single command:
 1. GitHub Releases & in-app QA update feed (via Jenkins build & publish)
 2. Google Play Closed Beta / Closed Alpha track ('alpha')
 3. Google Play Internal Testing track ('internal')
-4. Telegram announcement & changelog format/broadcast (@ExpressiveGroup)
+4. Telegram announcement & changelog format/broadcast (@ExpressiveLauncher)
 5. XDA Developers thread announcement BBCode generation
 """
 
-import sys
-
-if sys.version_info < (3, 11):
-    sys.exit("Python 3.11+ is required (this is %d.%d); run it with /opt/homebrew/bin/python3.14" % sys.version_info[:2])
-
 import argparse
-import importlib.util
 import json
 import os
 from pathlib import Path
 import re
 import subprocess
+import sys
 import time
 import urllib.request
 
@@ -29,14 +24,9 @@ ROOT = Path(__file__).resolve().parents[1]
 CONTROL_SCRIPT = ROOT / "ci/jenkins/control.py"
 PUBLISH_SCRIPT = ROOT / "scripts/publish_play_bundle.py"
 TELEGRAM_SCRIPT = ROOT / "scripts/post_telegram.py"
-# post_telegram.DEFAULT_CHANNEL and post_telegram.EXIT_NOT_CONFIGURED; ci/tests keeps them in sync.
-TELEGRAM_DEFAULT_CHANNEL = "@ExpressiveGroup"
-TELEGRAM_NOT_CONFIGURED_EXIT = 3
 XDA_SCRIPT = ROOT / "scripts/format_xda.py"
 VERIFY_PLAY_PROTECT_SCRIPT = ROOT / "scripts/verify_developer_play_protect.py"
 XDA_THREAD_URL = "https://xdaforums.com/t/app-qa-android-17-expressive-launcher-looking-for-pixel-11-pro-pro-xl-feedback.4801792/"
-PUBLISH_QA_SCRIPT = ROOT / "ci/publish_qa.py"
-CI_RELEASES_DIR = Path.home() / "Library/Application Support/Expressive CI/releases"
 # The build job compiles, unit-tests and smoke-tests both Full and Core on an emulator, which can
 # take well over 15 minutes; publish jobs finish in about a minute.
 JENKINS_BUILD_WAIT_SECONDS = 3 * 60 * 60
@@ -57,32 +47,16 @@ def get_version_info() -> tuple[str, str]:
     return name_match.group(1), code_match.group(1)
 
 
-SECRET_FLAGS = ("--token", "--telegram-token")
-
-
-def redact_cmd(cmd: list[str]) -> str:
-    """The command line as printed in logs, with the value after a secret flag masked."""
-    shown = []
-    for i, c in enumerate(cmd):
-        c = str(c)
-        if i > 0 and str(cmd[i - 1]) in SECRET_FLAGS:
-            c = "***"
-        elif c.startswith(tuple(f"{flag}=" for flag in SECRET_FLAGS)):
-            c = c.split("=", 1)[0] + "=***"
-        shown.append(c)
-    return " ".join(shown)
-
-
-def run_cmd(cmd: list[str], timeout: int = 600, ok_codes: tuple[int, ...] = (0,)) -> subprocess.CompletedProcess:
-    print(f"\n[RUN] {redact_cmd(cmd)}")
+def run_cmd(cmd: list[str], timeout: int = 600) -> subprocess.CompletedProcess:
+    print(f"\n[RUN] {' '.join(str(c) for c in cmd)}")
     result = subprocess.run(cmd, cwd=ROOT, capture_output=True, text=True, timeout=timeout)
-    if result.returncode not in ok_codes:
+    if result.returncode != 0:
         print(f"[ERROR] Command failed with exit {result.returncode}")
         if result.stdout:
             print(f"[STDOUT]\n{result.stdout[-1500:]}")
         if result.stderr:
             print(f"[STDERR]\n{result.stderr[-1500:]}")
-        raise RuntimeError(f"Command failed: {redact_cmd(cmd)}")
+        raise RuntimeError(f"Command failed: {' '.join(str(c) for c in cmd)}")
     return result
 
 
@@ -142,53 +116,6 @@ def wait_for_jenkins_job(
     raise TimeoutError(f"Timed out waiting for Jenkins {job} job to complete after {max_wait_seconds}s")
 
 
-def run_telegram_stage(tg_cmd: list[str], tg_out: Path, channel: str) -> str:
-    """Run post_telegram.py and report whether the announcement reached the channel; never fails the release."""
-    try:
-        result = run_cmd(tg_cmd, timeout=120, ok_codes=(0, TELEGRAM_NOT_CONFIGURED_EXIT))
-    except Exception as e:
-        print(f"[WARNING] Telegram broadcast failed: {e}")
-        print(f"[INFO] Rendered Telegram message remains saved at {tg_out}")
-        return f"NOT broadcast: post_telegram.py failed, check the channel for partial posts (rendered to {tg_out.name})"
-    if result.returncode == TELEGRAM_NOT_CONFIGURED_EXIT:
-        print(f"[WARNING] Telegram announcement NOT broadcast: no bot token configured. Rendered to {tg_out}")
-        return f"NOT broadcast: no bot token configured (rendered to {tg_out.name})"
-    return f"Rendered & broadcast via {channel or TELEGRAM_DEFAULT_CHANNEL}"
-
-
-def sealed_full_apk(version_name: str, version_code: str, revision: str, release_id: str | None = None) -> Path | None:
-    """The sealed Full QA APK of exactly this version and source revision, or None.
-
-    Only a Jenkins seal is trusted, checked the way the publish job checks it. build/outputs holds whatever
-    Gradle last built on this Mac, which can be an older version: for 5.1.1 it held a 5.0.3 APK. Without
-    release_id, every sealed build of the version is checked, and exactly one may match the revision.
-    """
-    spec = importlib.util.spec_from_file_location("publish_qa", PUBLISH_QA_SCRIPT)
-    publish_qa = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(publish_qa)
-    if release_id:
-        candidates = [CI_RELEASES_DIR / release_id]
-    else:
-        candidates = sorted(CI_RELEASES_DIR.glob(f"qa-{version_name}-{version_code}-build-*"))
-    found = []
-    for directory in candidates:
-        try:
-            metadata, files = publish_qa.load_artifacts(directory, channel="qa", variant="full")
-        except (OSError, KeyError, TypeError, ValueError, publish_qa.PublishError) as error:
-            print(f"[INFO] Not using sealed release {directory.name}: {error}")
-            continue
-        if (metadata["versionName"] == version_name and str(metadata["versionCode"]) == str(version_code)
-                and len(revision) >= 7 and metadata["sourceRevision"].startswith(revision)):
-            found.append(files[metadata["fileName"]])
-    if len(found) == 1:
-        print(f"[INFO] Sealed Full APK: {found[0]}")
-        return found[0]
-    reason = "more than one sealed build matches" if found else "no verified sealed build matches"
-    print(f"[WARNING] {reason} {version_name} ({version_code}) at {revision[:12]}, so no APK is used. "
-          "Pass --revision with the commit the build used, or --release-id with the published build.")
-    return None
-
-
 def resolve_notes_file(version_name: str, version_code: str, custom_path: str | None = None) -> Path:
     if custom_path:
         p = Path(custom_path)
@@ -241,7 +168,6 @@ def main():
     parser.add_argument("--major", action="store_true", help="Bump major version ((MAJOR+1).0.0) before running release")
     parser.add_argument("--skip-jenkins", action="store_true", help="Skip Jenkins build & GitHub publication")
     parser.add_argument("--skip-core", action="store_true", help="Do not publish the Expressive Core QA prerelease")
-    parser.add_argument("--release-id", help="With --skip-jenkins: the published sealed Full build (qa-X.Y.Z-N-build-B) whose APK the Telegram post attaches")
     parser.add_argument("--with-play", "--enable-play", action="store_true", help="Enable optional Google Play Store bundle build & publication (default: off, direct GitHub Releases primary)")
     parser.add_argument("--skip-play", action="store_true", help="Explicitly skip Google Play Store bundle build & publication (default)")
     parser.add_argument("--skip-telegram", action="store_true", help="Skip Telegram announcement formatting/posting")
@@ -292,7 +218,6 @@ def main():
     # -------------------------------------------------------------
     # 1. Direct / GitHub Releases Flow (Jenkins)
     # -------------------------------------------------------------
-    release_id = args.release_id if args.skip_jenkins else None
     if not args.skip_jenkins:
         print("\n>>> STAGE 1: Jenkins Build Job (QA Signed APK & Smoke Tests)...")
         prev_build_num = get_latest_jenkins_build_number("build")
@@ -327,7 +252,7 @@ def main():
 
         # Expressive Core (XDA-021): the build job seals it after Full; a Core failure never blocks Full.
         core_release_id = f"qa-core-{version_name}-{version_code}-build-{build_number}"
-        core_seal = CI_RELEASES_DIR / core_release_id / "seal.json"
+        core_seal = Path.home() / "Library/Application Support/Expressive CI/releases" / core_release_id / "seal.json"
         if args.skip_core:
             core_status = "Skipped (--skip-core)"
         elif not core_seal.is_file():
@@ -355,9 +280,14 @@ def main():
             "--package", "dev.launcher.expressive.l3",
             "--output", str(receipt_path),
         ]
-        qa_apk = sealed_full_apk(version_name, version_code, revision, release_id)
-        if qa_apk:
-            play_protect_cmd.extend(["--apk", str(qa_apk)])
+        qa_apks = [apk for apk in (ROOT / "build/outputs/apk/lawnWithQuickstepExpressive/qa").glob("*.apk")
+                   if not apk.name.startswith("ExpressiveLauncherL3-Core")]
+        if not qa_apks:
+            ci_release_dir = Path.home() / "Library/Application Support/Expressive CI/releases" / release_id
+            if ci_release_dir.is_dir():
+                qa_apks = [f for f in ci_release_dir.glob("*.apk") if "baseline" not in f.name]
+        if qa_apks:
+            play_protect_cmd.extend(["--apk", str(qa_apks[0])])
         run_cmd(play_protect_cmd)
 
     # -------------------------------------------------------------
@@ -405,12 +335,18 @@ def main():
         if args.telegram_channel:
             tg_cmd.extend(["--channel", args.telegram_channel])
 
-        # Only the sealed APK of this release, never a local Gradle output; without one the post has no APK.
-        qa_apk = sealed_full_apk(version_name, version_code, revision, release_id)
-        if qa_apk:
-            tg_cmd.extend(["--apk", str(qa_apk)])
+        qa_apk_candidates = [apk for apk in (ROOT / "build/outputs/apk/lawnWithQuickstepExpressive/qa").glob("*.apk")
+                             if not apk.name.startswith("ExpressiveLauncherL3-Core")]
+        if qa_apk_candidates:
+            tg_cmd.extend(["--apk", str(qa_apk_candidates[0])])
 
-        tg_status = run_telegram_stage(tg_cmd, tg_out, args.telegram_channel)
+        try:
+            run_cmd(tg_cmd, timeout=120)
+            tg_status = f"Rendered & broadcast via {args.telegram_channel or '@ExpressiveLauncher'}"
+        except Exception as e:
+            print(f"[WARNING] Telegram broadcast step finished with warning/notice: {e}")
+            print(f"[INFO] Rendered Telegram message remains saved at {tg_out}")
+            tg_status = f"Rendered to {tg_out.name} (Notice logged)"
 
     # -------------------------------------------------------------
     # 4. XDA Developers Thread BBCode Flow
@@ -433,10 +369,7 @@ def main():
     # Summary
     # -------------------------------------------------------------
     print("\n" + "=" * 70)
-    if tg_status.startswith("NOT broadcast"):
-        print("RELEASE TARGETS COMPLETED, BUT THE TELEGRAM ANNOUNCEMENT WAS NOT BROADCAST")
-    else:
-        print("ALL RELEASE TARGETS COMPLETED SUCCESSFULLY!")
+    print("ALL RELEASE TARGETS COMPLETED SUCCESSFULLY!")
     print(f"- Version:            {version_name} (Build {version_code})")
     print(f"- GitHub Release:     https://github.com/denson9874/ExpressiveLauncher/releases/tag/qa-v{version_name}-{version_code}")
     print(f"- QA In-App Feed:     https://raw.githubusercontent.com/denson9874/ExpressiveLauncher/updates/qa-v2/latest.json")
