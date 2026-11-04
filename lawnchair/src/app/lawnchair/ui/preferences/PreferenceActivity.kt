@@ -22,17 +22,11 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
 import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.core.content.edit
 import app.lawnchair.smartspace.provider.OnboardingProvider
 import app.lawnchair.ui.preferences.navigation.PreferenceRoute
-import app.lawnchair.ui.preferences.pro.RedeemProDialog
 import app.lawnchair.ui.theme.EdgeToEdge
 import app.lawnchair.ui.theme.LawnchairTheme
 import com.android.launcher3.LauncherPrefs
@@ -46,7 +40,7 @@ class PreferenceActivity : ComponentActivity() {
         recreate()
     }
 
-    @OptIn(ExperimentalMaterial3WindowSizeClassApi::class, ExperimentalMaterial3Api::class)
+    @OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -59,14 +53,6 @@ class PreferenceActivity : ComponentActivity() {
             }
         }
 
-        val deepLinkProKey: String? = intent?.data?.let { uri ->
-            if (uri.scheme == "expressive" && uri.host == "pro" && (uri.path == "/activate" || uri.path == "")) {
-                uri.getQueryParameter("key")
-            } else {
-                null
-            }
-        }
-
         setContent {
             LawnchairTheme {
                 EdgeToEdge()
@@ -76,15 +62,6 @@ class PreferenceActivity : ComponentActivity() {
                     startDestination = initialRoute,
                     intent = intent,
                 )
-                if (!deepLinkProKey.isNullOrBlank()) {
-                    var showDeepLinkDialog by remember { mutableStateOf(true) }
-                    if (showDeepLinkDialog) {
-                        RedeemProDialog(
-                            initialKey = deepLinkProKey,
-                            onDismiss = { showDeepLinkDialog = false },
-                        )
-                    }
-                }
             }
         }
         LauncherPrefs.getPrefs(this).edit {

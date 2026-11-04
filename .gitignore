@@ -19,9 +19,6 @@ keystore.properties
 *.jks
 *.keystore
 *.p12
-*.pem
-*.key
-giveaway*.txt
 upload_certificate.pem
 play-service-account.json
 __pycache__
