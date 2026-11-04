@@ -106,7 +106,6 @@ fun RedeemProDialog(
     var showTransactionInput by remember { mutableStateOf(false) }
     var transactionIdInput by remember { mutableStateOf("") }
     var isVerifyingTransaction by remember { mutableStateOf(false) }
-    var showCakeyCelebration by remember { mutableStateOf(false) }
 
     val clipboardManager = LocalClipboardManager.current
     val keyboardController = LocalSoftwareKeyboardController.current
@@ -122,9 +121,6 @@ fun RedeemProDialog(
                     errorMessage = res.exceptionOrNull()?.message ?: "Invalid license key"
                 } else {
                     errorMessage = null
-                    if (res.getOrNull()?.isCakey == true) {
-                        showCakeyCelebration = true
-                    }
                 }
             }
         }
@@ -319,8 +315,6 @@ fun RedeemProDialog(
                                         val actRes = proManager.activate(response.key)
                                         if (actRes.isFailure) {
                                             errorMessage = actRes.exceptionOrNull()?.message ?: "Activation failed"
-                                        } else if (actRes.getOrNull()?.isCakey == true) {
-                                            showCakeyCelebration = true
                                         }
                                     } else {
                                         statusMessage = context.getString(
@@ -403,8 +397,6 @@ fun RedeemProDialog(
                                                 val actRes = proManager.activate(response.key)
                                                 if (actRes.isFailure) {
                                                     errorMessage = actRes.exceptionOrNull()?.message ?: "Activation failed"
-                                                } else if (actRes.getOrNull()?.isCakey == true) {
-                                                    showCakeyCelebration = true
                                                 }
                                             } else {
                                                 errorMessage = response.message ?: "Transaction ID not verified"
@@ -498,9 +490,6 @@ fun RedeemProDialog(
                                     errorMessage = res.exceptionOrNull()?.message ?: "Verification failed"
                                 } else {
                                     errorMessage = null
-                                    if (res.getOrNull()?.isCakey == true) {
-                                        showCakeyCelebration = true
-                                    }
                                 }
                             },
                             enabled = keyInput.isNotBlank(),
@@ -572,12 +561,6 @@ fun RedeemProDialog(
             Spacer(Modifier.height(16.dp))
         }
     }
-
-    if (showCakeyCelebration) {
-        CakeyCelebrationDialog(
-            onDismiss = { showCakeyCelebration = false },
-        )
-    }
 }
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
@@ -589,11 +572,9 @@ private fun ProActiveContent(
     onDeactivate: () -> Unit,
     onDismiss: () -> Unit,
 ) {
-    val isCakey = details.isCakey
     Surface(
         shape = MaterialTheme.shapes.large,
-        color = if (isCakey) MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.5f)
-        else MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
+        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 8.dp),
@@ -601,19 +582,17 @@ private fun ProActiveContent(
         Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(
-                    imageVector = if (isCakey) Icons.Rounded.Favorite else Icons.Rounded.CheckCircle,
+                    imageVector = Icons.Rounded.CheckCircle,
                     contentDescription = null,
-                    tint = if (isCakey) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.primary,
+                    tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(24.dp),
                 )
                 Spacer(Modifier.width(8.dp))
                 Text(
-                    text = if (isCakey) stringResource(R.string.cakey_edition_title)
-                    else stringResource(R.string.expressive_pro_license_details),
+                    text = stringResource(R.string.expressive_pro_license_details),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
-                    color = if (isCakey) MaterialTheme.colorScheme.onTertiaryContainer
-                    else MaterialTheme.colorScheme.onPrimaryContainer,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
                 )
             }
             Spacer(Modifier.height(10.dp))
@@ -627,36 +606,23 @@ private fun ProActiveContent(
             Text(
                 text = stringResource(R.string.expressive_pro_recipient, recipientDisplay),
                 style = MaterialTheme.typography.bodyMedium,
-                color = if (isCakey) MaterialTheme.colorScheme.onTertiaryContainer else MaterialTheme.colorScheme.onPrimaryContainer,
+                color = MaterialTheme.colorScheme.onPrimaryContainer,
             )
             Text(
-                text = stringResource(
-                    R.string.expressive_pro_tier,
-                    if (isCakey) "Cakey Edition 🍰 (The Best of the Best)" else details.type.displayName,
-                ),
+                text = stringResource(R.string.expressive_pro_tier, details.type.displayName),
                 style = MaterialTheme.typography.bodyMedium,
-                color = if (isCakey) MaterialTheme.colorScheme.onTertiaryContainer else MaterialTheme.colorScheme.onPrimaryContainer,
+                color = MaterialTheme.colorScheme.onPrimaryContainer,
             )
             val expiryText = if (details.isLifetime) {
-                if (isCakey) "Lifetime (Forever & Always ❤️)" else stringResource(R.string.expressive_pro_lifetime)
+                stringResource(R.string.expressive_pro_lifetime)
             } else {
                 formatTimestamp(details.expiresAt)
             }
             Text(
                 text = stringResource(R.string.expressive_pro_expires, expiryText),
                 style = MaterialTheme.typography.bodyMedium,
-                color = if (isCakey) MaterialTheme.colorScheme.onTertiaryContainer else MaterialTheme.colorScheme.onPrimaryContainer,
+                color = MaterialTheme.colorScheme.onPrimaryContainer,
             )
-
-            if (isCakey) {
-                Spacer(Modifier.height(8.dp))
-                Text(
-                    text = stringResource(R.string.cakey_edition_banner_desc),
-                    style = MaterialTheme.typography.bodySmall,
-                    fontWeight = FontWeight.Medium,
-                    color = MaterialTheme.colorScheme.tertiary,
-                )
-            }
         }
     }
 
