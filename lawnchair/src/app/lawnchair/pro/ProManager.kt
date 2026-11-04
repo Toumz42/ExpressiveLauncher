@@ -19,10 +19,7 @@ class ProManager(private val context: Context) {
 
     private val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
-    /** Pro is included with ExpressiveOS, license or not: [RomEntitlement]. */
-    val isIncludedWithRom: Boolean = RomEntitlement.isIncluded(context)
-
-    private val _isPro = MutableStateFlow(isIncludedWithRom)
+    private val _isPro = MutableStateFlow(false)
     val isPro: StateFlow<Boolean> = _isPro.asStateFlow()
 
     private val _isCakey = MutableStateFlow(false)
@@ -51,7 +48,7 @@ class ProManager(private val context: Context) {
     fun refreshState() {
         val savedKey = prefs.getString(KEY_LICENSE_CODE, null)
         if (savedKey.isNullOrBlank()) {
-            _isPro.value = isIncludedWithRom
+            _isPro.value = false
             _isCakey.value = false
             _licenseDetails.value = null
             return
@@ -71,15 +68,14 @@ class ProManager(private val context: Context) {
         }.onFailure {
             lastError = it
             val wasTrial = _licenseDetails.value?.isTrial == true || isSavedTrialKey(savedKey)
-            _isPro.value = isIncludedWithRom
+            _isPro.value = false
             _isCakey.value = false
             _licenseDetails.value = null
             expiryHandler.removeCallbacks(expiryCheck)
             if (wasTrial) {
                 // A finished trial returns to Free Core; settings stay saved, just inactive.
-                // On ExpressiveOS nothing is lost, so there is nothing to tell the user.
-                prefs.edit().remove(KEY_LICENSE_CODE).putBoolean(KEY_TRIAL_ENDED_NOTICE, !isIncludedWithRom).commit()
-                _trialEndedNotice.value = !isIncludedWithRom
+                prefs.edit().remove(KEY_LICENSE_CODE).putBoolean(KEY_TRIAL_ENDED_NOTICE, true).commit()
+                _trialEndedNotice.value = true
             }
         }
     }
@@ -275,7 +271,7 @@ class ProManager(private val context: Context) {
     fun deactivate() {
         expiryHandler.removeCallbacks(expiryCheck)
         prefs.edit().remove(KEY_LICENSE_CODE).commit()
-        _isPro.value = isIncludedWithRom
+        _isPro.value = false
         _isCakey.value = false
         _licenseDetails.value = null
     }
@@ -316,7 +312,6 @@ class ProManager(private val context: Context) {
         fun resetForTests() {
             clock = { System.currentTimeMillis() }
             elapsedClock = { android.os.SystemClock.elapsedRealtime() }
-            RomEntitlement.platformCertDigestsForTests = null
             INSTANCE = MainThreadInitializedObject(::ProManager)
         }
     }

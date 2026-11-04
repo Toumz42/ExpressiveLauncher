@@ -1,6 +1,3 @@
-// ProActiveContent emits a Surface and an AnimatedVisibility into its caller's Column.
-@file:Suppress("ktlint:compose:multiple-emitters-check")
-
 package app.lawnchair.ui.preferences.pro
 
 import android.content.Context
@@ -87,11 +84,11 @@ import app.lawnchair.pro.ProLicenseDetails
 import app.lawnchair.pro.VerifyDonationRequest
 import app.lawnchair.pro.proManager
 import com.android.launcher3.R
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
-import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -187,21 +184,15 @@ fun RedeemProDialog(
                         .size(44.dp)
                         .clip(CircleShape)
                         .background(
-                            if (isPro) {
-                                MaterialTheme.colorScheme.primaryContainer
-                            } else {
-                                MaterialTheme.colorScheme.secondaryContainer
-                            },
+                            if (isPro) MaterialTheme.colorScheme.primaryContainer
+                            else MaterialTheme.colorScheme.secondaryContainer,
                         ),
                 ) {
                     Icon(
                         imageVector = if (isPro) Icons.Rounded.Verified else Icons.Rounded.Star,
                         contentDescription = null,
-                        tint = if (isPro) {
-                            MaterialTheme.colorScheme.primary
-                        } else {
-                            MaterialTheme.colorScheme.secondary
-                        },
+                        tint = if (isPro) MaterialTheme.colorScheme.primary
+                        else MaterialTheme.colorScheme.secondary,
                         modifier = Modifier.size(26.dp),
                     )
                 }
@@ -213,11 +204,8 @@ fun RedeemProDialog(
                         fontWeight = FontWeight.Bold,
                     )
                     Text(
-                        text = when {
-                            proManager.isIncludedWithRom -> stringResource(R.string.expressive_pro_included_status)
-                            isPro -> stringResource(R.string.expressive_pro_status_active)
-                            else -> stringResource(R.string.expressive_pro_redeem_title)
-                        },
+                        text = if (isPro) stringResource(R.string.expressive_pro_status_active)
+                        else stringResource(R.string.expressive_pro_redeem_title),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -240,18 +228,7 @@ fun RedeemProDialog(
                     onDismiss = onDismiss,
                 )
             } else {
-                if (proManager.isIncludedWithRom) {
-                    // No trial to offer: every Pro feature is already on. Donating or entering a
-                    // key stays possible below for anyone who wants to support development.
-                    Text(
-                        text = stringResource(R.string.expressive_pro_included_desc),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(bottom = 16.dp),
-                    )
-                } else {
-                    ProTrialCard()
-                }
+                ProTrialCard()
                 // Tab Selection: Donate vs Offline Key
                 PrimaryTabRow(
                     selectedTabIndex = selectedTab,
@@ -267,15 +244,7 @@ fun RedeemProDialog(
                             statusMessage = null
                             showSupportCard = false
                         },
-                        text = {
-                            Text(
-                                if (proManager.isIncludedWithRom) {
-                                    stringResource(R.string.expressive_pro_tab_donate_included)
-                                } else {
-                                    stringResource(R.string.expressive_pro_tab_donate)
-                                },
-                            )
-                        },
+                        text = { Text(stringResource(R.string.expressive_pro_tab_donate)) },
                         icon = { Icon(Icons.Rounded.Favorite, contentDescription = null, modifier = Modifier.size(18.dp)) },
                     )
                     Tab(
@@ -617,11 +586,7 @@ fun RedeemProDialog(
                 } else {
                     // TAB 1: Offline Key Entry
                     Text(
-                        text = if (proManager.isIncludedWithRom) {
-                            stringResource(R.string.expressive_pro_redeem_desc_included)
-                        } else {
-                            stringResource(R.string.expressive_pro_redeem_desc)
-                        },
+                        text = stringResource(R.string.expressive_pro_redeem_desc),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(bottom = 16.dp),
@@ -643,10 +608,7 @@ fun RedeemProDialog(
                         keyboardActions = KeyboardActions(onDone = { keyboardController?.hide() }),
                         trailingIcon = {
                             if (keyInput.isNotEmpty()) {
-                                IconButton(onClick = {
-                                    keyInput = ""
-                                    errorMessage = null
-                                }) {
+                                IconButton(onClick = { keyInput = ""; errorMessage = null }) {
                                     Icon(Icons.Rounded.Clear, contentDescription = "Clear")
                                 }
                             } else {
@@ -870,11 +832,8 @@ private fun ProActiveContent(
     val isCakey = details.isCakey
     Surface(
         shape = MaterialTheme.shapes.large,
-        color = if (isCakey) {
-            MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.5f)
-        } else {
-            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
-        },
+        color = if (isCakey) MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.5f)
+        else MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 8.dp),
@@ -889,18 +848,12 @@ private fun ProActiveContent(
                 )
                 Spacer(Modifier.width(8.dp))
                 Text(
-                    text = if (isCakey) {
-                        stringResource(R.string.cakey_edition_title)
-                    } else {
-                        stringResource(R.string.expressive_pro_license_details)
-                    },
+                    text = if (isCakey) stringResource(R.string.cakey_edition_title)
+                    else stringResource(R.string.expressive_pro_license_details),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
-                    color = if (isCakey) {
-                        MaterialTheme.colorScheme.onTertiaryContainer
-                    } else {
-                        MaterialTheme.colorScheme.onPrimaryContainer
-                    },
+                    color = if (isCakey) MaterialTheme.colorScheme.onTertiaryContainer
+                    else MaterialTheme.colorScheme.onPrimaryContainer,
                 )
             }
             Spacer(Modifier.height(10.dp))
@@ -957,11 +910,7 @@ private fun ProActiveContent(
         ) {
             Column(modifier = Modifier.padding(12.dp)) {
                 Text(
-                    text = if (proManager().isIncludedWithRom) {
-                        stringResource(R.string.expressive_pro_deactivate_confirm_included)
-                    } else {
-                        stringResource(R.string.expressive_pro_deactivate_confirm)
-                    },
+                    text = stringResource(R.string.expressive_pro_deactivate_confirm),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onErrorContainer,
                 )
