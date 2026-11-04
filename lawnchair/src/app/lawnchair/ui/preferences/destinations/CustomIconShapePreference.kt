@@ -55,8 +55,6 @@ import app.lawnchair.ui.preferences.components.layout.PreferenceDivider
 import app.lawnchair.ui.preferences.components.layout.PreferenceGroup
 import app.lawnchair.ui.preferences.components.layout.PreferenceLayout
 import app.lawnchair.ui.preferences.components.layout.PreferenceTemplate
-import app.lawnchair.ui.preferences.pro.ProGate
-import app.lawnchair.ui.preferences.pro.rememberIsPro
 import app.lawnchair.ui.theme.LawnchairTheme
 import app.lawnchair.ui.util.LocalBottomSheetHandler
 import app.lawnchair.util.copyToClipboard
@@ -102,57 +100,50 @@ fun CustomIconShapePreference(
         modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally,
         bottomBar = {
-            if (rememberIsPro()) {
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalAlignment = Alignment.End,
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.End,
+            ) {
+                Button(
+                    enabled = !selectedIconShapeApplied.value,
+                    onClick = {
+                        customIconShapeAdapter.onChange(newValue = selectedIconShape.value)
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(all = 16.dp),
+                    shapes = ButtonDefaults.shapes(),
                 ) {
-                    Button(
-                        enabled = !selectedIconShapeApplied.value,
-                        onClick = {
-                            customIconShapeAdapter.onChange(newValue = selectedIconShape.value)
+                    Text(
+                        text = if (appliedIconShape != null) {
+                            stringResource(id = R.string.action_apply)
+                        } else {
+                            stringResource(id = R.string.action_create)
                         },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(all = 16.dp),
-                        shapes = ButtonDefaults.shapes(),
-                    ) {
-                        Text(
-                            text = if (appliedIconShape != null) {
-                                stringResource(id = R.string.action_apply)
-                            } else {
-                                stringResource(id = R.string.action_create)
-                            },
-                        )
-                    }
-                    BottomSpacer()
+                    )
                 }
+                BottomSpacer()
             }
         },
     ) {
-        ProGate(
-            lockedTitle = label,
-            lockedDescription = stringResource(R.string.expressive_pro_locked_customization),
-        ) {
-            IconShapePreview(
-                modifier = Modifier.padding(top = 12.dp),
-                iconShape = selectedIconShape.value,
-            )
+        IconShapePreview(
+            modifier = Modifier.padding(top = 12.dp),
+            iconShape = selectedIconShape.value,
+        )
 
-            IconShapeCornerPreferenceGroup(
-                selectedIconShape = selectedIconShape.value,
-                onSelectedIconShapeChange = { newIconShape ->
-                    selectedIconShape.value = newIconShape
-                },
-            )
+        IconShapeCornerPreferenceGroup(
+            selectedIconShape = selectedIconShape.value,
+            onSelectedIconShapeChange = { newIconShape ->
+                selectedIconShape.value = newIconShape
+            },
+        )
 
-            IconShapeClipboardPreferenceGroup(
-                selectedIconShape = selectedIconShape.value,
-                onSelectedIconShapeChange = { newIconShape ->
-                    selectedIconShape.value = newIconShape
-                },
-            )
-        }
+        IconShapeClipboardPreferenceGroup(
+            selectedIconShape = selectedIconShape.value,
+            onSelectedIconShapeChange = { newIconShape ->
+                selectedIconShape.value = newIconShape
+            },
+        )
     }
 }
 

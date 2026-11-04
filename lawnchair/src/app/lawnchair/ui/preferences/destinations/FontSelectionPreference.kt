@@ -60,7 +60,6 @@ import app.lawnchair.ui.preferences.components.layout.PreferenceLazyColumn
 import app.lawnchair.ui.preferences.components.layout.PreferenceSearchScaffold
 import app.lawnchair.ui.preferences.components.layout.PreferenceTemplate
 import app.lawnchair.ui.preferences.components.layout.preferenceGroupItems
-import app.lawnchair.ui.preferences.pro.ProGate
 import com.android.launcher3.R
 import com.android.launcher3.util.MSDLPlayerWrapper
 import com.google.android.msdl.data.model.MSDLToken
@@ -156,74 +155,63 @@ fun FontSelection(
             }
         },
     ) { padding ->
-        Box {
-            PreferenceLazyColumn(padding) {
-                if (!hasFilter && !isPro) {
-                    item(contentType = { ContentType.ADD_BUTTON }) {
-                        ProGate(
-                            modifier = Modifier.padding(top = 8.dp),
-                            lockedTitle = stringResource(R.string.font_more_fonts_title),
-                            lockedDescription = stringResource(R.string.font_more_fonts_pro),
-                        ) {}
+        PreferenceLazyColumn(padding) {
+            if (!hasFilter) {
+                item(contentType = { ContentType.ADD_BUTTON }) {
+                    PreferenceGroupItem(
+                        modifier = Modifier.padding(top = 8.dp),
+                        cutBottom = customFonts.isNotEmpty(),
+                    ) {
+                        PreferenceTemplate(
+                            onClick = {
+                                mMSDLPlayerWrapper.playToken(MSDLToken.TAP_MEDIUM_EMPHASIS)
+                                val intent = Intent(Intent.ACTION_GET_CONTENT)
+                                intent.addCategory(Intent.CATEGORY_OPENABLE)
+                                intent.type = "*/*"
+                                request.launch(intent)
+                            },
+                            title = { Text(stringResource(id = R.string.pref_fonts_add_fonts)) },
+                            description = { Text(stringResource(id = R.string.pref_fonts_add_fonts_summary)) },
+                            startWidget = {
+                                Icon(imageVector = Icons.Rounded.Add, contentDescription = null)
+                            },
+                        )
                     }
                 }
-                if (!hasFilter && isPro) {
-                    item(contentType = { ContentType.ADD_BUTTON }) {
-                        PreferenceGroupItem(
-                            modifier = Modifier.padding(top = 8.dp),
-                            cutBottom = customFonts.isNotEmpty(),
-                        ) {
-                            PreferenceTemplate(
-                                onClick = {
-                                    mMSDLPlayerWrapper.playToken(MSDLToken.TAP_MEDIUM_EMPHASIS)
-                                    val intent = Intent(Intent.ACTION_GET_CONTENT)
-                                    intent.addCategory(Intent.CATEGORY_OPENABLE)
-                                    intent.type = "*/*"
-                                    request.launch(intent)
-                                },
-                                title = { Text(stringResource(id = R.string.pref_fonts_add_fonts)) },
-                                description = { Text(stringResource(id = R.string.pref_fonts_add_fonts_summary)) },
-                                startWidget = {
-                                    Icon(imageVector = Icons.Rounded.Add, contentDescription = null)
-                                },
-                            )
-                        }
-                    }
-                    itemsIndexed(
-                        items = customFonts,
-                        key = { _, family -> family.toString() },
-                        contentType = { _, _ -> ContentType.FONT },
-                    ) { index, family ->
-                        PreferenceGroupItem(
-                            cutTop = true,
-                            cutBottom = index != customFonts.lastIndex,
-                        ) {
-                            PreferenceDivider(startIndent = 40.dp)
-                            FontSelectionItem(
-                                adapter = adapter,
-                                family = family,
-                                onDelete = {
-                                    val selected = family.variants.any { it.value == adapter.state.value }
-                                    if (selected) {
-                                        fontPref.set(fontPref.defaultValue)
-                                    }
-                                    (family.default as? FontCache.TTFFont)?.delete()
-                                },
-                            )
-                        }
-                    }
-                }
-                preferenceGroupItems(
-                    filteredItems,
-                    isFirstChild = false,
+                itemsIndexed(
+                    items = customFonts,
                     key = { _, family -> family.toString() },
-                    contentType = { ContentType.FONT },
-                ) { _, family ->
-                    FontSelectionItem(
-                        adapter = adapter,
-                        family = family,
-                    )
+                    contentType = { _, _ -> ContentType.FONT },
+                ) { index, family ->
+                    PreferenceGroupItem(
+                        cutTop = true,
+                        cutBottom = index != customFonts.lastIndex,
+                    ) {
+                        PreferenceDivider(startIndent = 40.dp)
+                        FontSelectionItem(
+                            adapter = adapter,
+                            family = family,
+                            onDelete = {
+                                val selected = family.variants.any { it.value == adapter.state.value }
+                                if (selected) {
+                                    fontPref.set(fontPref.defaultValue)
+                                }
+                                (family.default as? FontCache.TTFFont)?.delete()
+                            },
+                        )
+                    }
                 }
+            }
+            preferenceGroupItems(
+                filteredItems,
+                isFirstChild = false,
+                key = { _, family -> family.toString() },
+                contentType = { ContentType.FONT },
+            ) { _, family ->
+                FontSelectionItem(
+                    adapter = adapter,
+                    family = family,
+                )
             }
         }
     }

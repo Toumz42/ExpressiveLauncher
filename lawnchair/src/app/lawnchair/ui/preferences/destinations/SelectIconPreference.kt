@@ -23,8 +23,6 @@ import app.lawnchair.ui.preferences.components.controls.ClickablePreference
 import app.lawnchair.ui.preferences.components.layout.PreferenceLayoutLazyColumn
 import app.lawnchair.ui.preferences.components.layout.preferenceGroupItems
 import app.lawnchair.ui.preferences.navigation.IconPicker
-import app.lawnchair.ui.preferences.pro.ProGate
-import app.lawnchair.ui.preferences.pro.rememberIsPro
 import app.lawnchair.ui.util.OnResult
 import app.lawnchair.util.requireSystemService
 import com.android.launcher3.LauncherAppState
@@ -71,8 +69,6 @@ fun SelectIconPreference(componentKey: ComponentKey) {
     val overrideItem by repo.observeTarget(componentKey).collectAsStateWithLifecycle(initialValue = null)
     val hasOverride = overrideItem != null
 
-    val isPro = rememberIsPro()
-
     PreferenceLayoutLazyColumn(label = label) {
         if (hasOverride) {
             preferenceGroupItems(1, isFirstChild = true) {
@@ -96,32 +92,23 @@ fun SelectIconPreference(componentKey: ComponentKey) {
                 )
             }
         }
-        if (!isPro) {
-            item {
-                ProGate(
-                    lockedTitle = stringResource(id = R.string.pick_icon_from_label),
-                    lockedDescription = stringResource(R.string.expressive_pro_locked_customization),
-                ) {}
-            }
-        } else {
-            preferenceGroupItems(
-                items = iconPacks,
-                isFirstChild = !hasOverride,
-                heading = { stringResource(id = R.string.pick_icon_from_label) },
-            ) { _, iconPack ->
-                AppItem(
-                    label = iconPack.name,
-                    icon = remember(iconPack) { iconPack.icon.toBitmap() },
-                    onClick = {
-                        mMSDLPlayerWrapper.playToken(MSDLToken.TAP_MEDIUM_EMPHASIS)
-                        if (iconPack.packageName.isEmpty()) {
-                            navController.navigate(IconPicker())
-                        } else {
-                            navController.navigate(IconPicker(iconPack.packageName))
-                        }
-                    },
-                )
-            }
+        preferenceGroupItems(
+            items = iconPacks,
+            isFirstChild = !hasOverride,
+            heading = { stringResource(id = R.string.pick_icon_from_label) },
+        ) { _, iconPack ->
+            AppItem(
+                label = iconPack.name,
+                icon = remember(iconPack) { iconPack.icon.toBitmap() },
+                onClick = {
+                    mMSDLPlayerWrapper.playToken(MSDLToken.TAP_MEDIUM_EMPHASIS)
+                    if (iconPack.packageName.isEmpty()) {
+                        navController.navigate(IconPicker())
+                    } else {
+                        navController.navigate(IconPicker(iconPack.packageName))
+                    }
+                },
+            )
         }
     }
 }
