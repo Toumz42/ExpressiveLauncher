@@ -201,7 +201,6 @@ fun RedeemProDialog(
                     onDismiss = onDismiss,
                 )
             } else {
-                ProTrialCard()
                 // Tab Selection: Donate vs Offline Key
                 PrimaryTabRow(
                     selectedTabIndex = selectedTab,

@@ -523,9 +523,6 @@ class LawnchairLauncher : QuickstepLauncher() {
         if (deviceProfile.isAllAppsSheetLayoutStale) {
             InvariantDeviceProfile.INSTANCE.get(this).onPreferencesChanged(this)
         }
-        // Re-check time-limited Pro licenses (trials) whenever Home returns.
-        app.lawnchair.pro.ProManager.INSTANCE.get(this).refreshState()
-
         dragLayer.viewTreeObserver.addOnDrawListener(
             object : ViewTreeObserver.OnDrawListener {
                 private var handled = false

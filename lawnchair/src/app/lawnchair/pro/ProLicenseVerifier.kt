@@ -17,11 +17,6 @@ object ProLicenseVerifier {
     const val PRO_PUBLIC_KEY_BASE64 =
         "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEQ2IKJ1Abq8srwhR39mznSCNHhNbC5RUmM3n51GIrhMZPAOEQwMj8KZ9GVn8S2a9oQ8pJO8nBSfwRkNUbV0PdRA=="
 
-    /** Lets unit tests verify keys signed by a throwaway key pair; never set in production. */
-    @androidx.annotation.VisibleForTesting
-    @Volatile
-    var publicKeyForTests: PublicKey? = null
-
     private val publicKey: PublicKey by lazy {
         val keyBytes = Base64.decode(PRO_PUBLIC_KEY_BASE64, Base64.DEFAULT)
         val spec = X509EncodedKeySpec(keyBytes)
@@ -52,10 +47,7 @@ object ProLicenseVerifier {
      * @param rawKey The license key string (e.g. "EXPR-PRO-XXXX-XXXX-...")
      * @return Result containing [ProLicenseDetails] on success, or an exception describing the failure.
      */
-    fun verify(
-        rawKey: String,
-        nowSeconds: Long = System.currentTimeMillis() / 1000L,
-    ): Result<ProLicenseDetails> = runCatching {
+    fun verify(rawKey: String): Result<ProLicenseDetails> = runCatching {
         var clean = rawKey.trim().uppercase()
         if (clean.startsWith("EXPR-PRO-")) {
             clean = clean.removePrefix("EXPR-PRO-")
@@ -102,7 +94,7 @@ object ProLicenseVerifier {
 
         // Asymmetric cryptographic signature verification
         val ecdsa = Signature.getInstance("SHA256withECDSA").apply {
-            initVerify(publicKeyForTests ?: publicKey)
+            initVerify(publicKey)
             update(payloadBytes)
         }
         val isSignatureValid = ecdsa.verify(sigBytes)
@@ -117,7 +109,7 @@ object ProLicenseVerifier {
             rawKeyCode = rawKey.trim(),
         )
 
-        require(!details.isExpiredAt(nowSeconds)) { "This license key expired on ${formatDate(expiresAt)}." }
+        require(!details.isExpired) { "This license key expired on ${formatDate(expiresAt)}." }
 
         details
     }
