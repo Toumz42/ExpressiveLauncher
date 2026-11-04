@@ -28,7 +28,7 @@ interface ProActivationService {
     ): LicenseResponse
 
     companion object {
-        const val DEFAULT_ACTIVATION_URL = "https://expressive-pro-activation.daryldenson-apps.workers.dev/"
+        const val DEFAULT_ACTIVATION_URL = "https://expressive-pro-activation.daryldenson0405.workers.dev/"
 
         fun create(baseUrl: String = DEFAULT_ACTIVATION_URL): ProActivationService {
             val okHttpClient = OkHttpClient.Builder()
