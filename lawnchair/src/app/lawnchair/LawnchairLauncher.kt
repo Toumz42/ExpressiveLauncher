@@ -524,12 +524,7 @@ class LawnchairLauncher : QuickstepLauncher() {
             InvariantDeviceProfile.INSTANCE.get(this).onPreferencesChanged(this)
         }
         // Re-check time-limited Pro licenses (trials) whenever Home returns.
-        val proManager = app.lawnchair.pro.ProManager.INSTANCE.get(this)
-        proManager.refreshState()
-        // Back from buying Pro: picks the license up once the payment has gone through.
-        if (proManager.hasPendingCheckout) {
-            lifecycleScope.launch { proManager.claimPendingCheckout() }
-        }
+        app.lawnchair.pro.ProManager.INSTANCE.get(this).refreshState()
 
         dragLayer.viewTreeObserver.addOnDrawListener(
             object : ViewTreeObserver.OnDrawListener {
