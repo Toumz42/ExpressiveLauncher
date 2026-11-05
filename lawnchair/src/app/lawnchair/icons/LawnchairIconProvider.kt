@@ -20,12 +20,14 @@ import android.content.pm.PackageItemInfo
 import android.content.res.Resources
 import android.graphics.drawable.AdaptiveIconDrawable
 import android.graphics.drawable.Drawable
+import android.os.Build
 import android.os.Handler
 import android.os.UserHandle
 import android.os.UserManager
 import android.util.ArrayMap
 import android.util.Log
 import androidx.core.content.getSystemService
+import androidx.core.graphics.drawable.toDrawable
 import app.lawnchair.data.iconoverride.IconOverrideRepository
 import app.lawnchair.icons.iconpack.IconPack
 import app.lawnchair.icons.iconpack.IconPackProvider
@@ -42,6 +44,7 @@ import com.android.launcher3.dagger.LauncherAppSingleton
 import com.android.launcher3.graphics.ThemeManager
 import com.android.launcher3.icons.ClockDrawableWrapper
 import com.android.launcher3.icons.LauncherIconProvider
+import com.android.launcher3.icons.mono.ThemedIconDrawable
 import com.android.launcher3.util.ComponentKey
 import com.android.launcher3.util.SafeCloseable
 import javax.inject.Inject
@@ -132,20 +135,17 @@ class LawnchairIconProvider @Inject constructor(
         val user = UserHandle.getUserHandleForUid(appInfo.uid)
         val componentName = resolveComponentName(info, appInfo, user)
 
-        // 1. Récupération des overrides et de l'entrée d'icône (Snippet 1)
         val explicitOverride = componentName?.let {
             overrideRepo.overridesMap[ComponentKey(it, user)]?.toIconEntry()
         }
         val iconEntry = explicitOverride ?: componentName?.let { resolveIconEntry(it, user) }
 
-        // 2. Résolution du calendrier dynamique si nécessaire
         val iconPackEntry = if (iconEntry?.type == IconType.Calendar) {
             iconEntry.resolveDynamicCalendar(getDay())
         } else {
             iconEntry
         }
 
-        // 3. Filtrage du pack d'icônes (Lawnicons / règles spécifiques du Snippet 1)
         val iconPackIcon = iconPackEntry
             ?.takeIf {
                 explicitOverride != null || unthemedIconPackPackage(it.packPackageName).isNotEmpty() ||
@@ -155,13 +155,22 @@ class LawnchairIconProvider @Inject constructor(
 
         val baseIcon = iconPackIcon ?: super.getIcon(info, appInfo, iconDpi)
 
-        // 4. Vérification si les icônes thématiques sont activées
         if (!themedIconsEnabled || baseIcon is ClockDrawableWrapper || iconEntry == null) {
             return baseIcon
         }
 
-        // 5. Résolution de l'icône thématique via la méthode dédiée
-        return resolveThemedIcon(packageName, componentName, iconEntry, iconDpi, explicitOverride, iconPackIcon) ?: baseIcon
+        // 1. On tente de résoudre l'icône thématique via la méthode dédiée
+        resolveThemedIcon(packageName, componentName, iconEntry, iconDpi, explicitOverride, iconPackIcon)?.let {
+            return it
+        }
+
+        // 2. Fallback géré ici si rien n'a été trouvé par resolveThemedIcon
+        val fallbackMonochrome = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) (baseIcon as? AdaptiveIconDrawable)?.monochrome else null
+        return if (fallbackMonochrome != null) {
+            ThemedIconLayer(baseIcon, fallbackMonochrome)
+        } else {
+            baseIcon
+        }
     }
 
     private fun resolveThemedIcon(
@@ -175,8 +184,7 @@ class LawnchairIconProvider @Inject constructor(
         val themedColors = ThemedIconDrawable.getColors(context)
         val clock = iconPackProvider.getClockMetadata(iconEntry)
 
-        // Gestion spécifique Lawnicons (provenant du Snippet 1)
-        val overrideMonochrome = if (explicitOverride?.packPackageName == LAWNICONS_PACKAGE_NAME) {
+        val overrideMonochrome = if (explicitOverride?.packPackageName == LAWNICONS_PACKAGE_NAME && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             (iconPackIcon as? AdaptiveIconDrawable)?.let { it.monochrome ?: it.foreground } ?: iconPackIcon
         } else {
             null
@@ -184,7 +192,6 @@ class LawnchairIconProvider @Inject constructor(
 
         return when {
             overrideMonochrome != null -> {
-                // Si un monochrome explicite Lawnicons existe, on l'utilise
                 val themedColorsArr = ThemedIconDrawable.getColors(context)
                 CustomAdaptiveIconDrawable(
                     themedColorsArr[0].toDrawable(),
@@ -193,12 +200,10 @@ class LawnchairIconProvider @Inject constructor(
             }
 
             clock != null -> {
-                // L'icône supporte l'horloge dynamique thématique
                 ClockDrawableWrapper.forPackage(mContext, mClock.packageName, iconDpi)?.getMonochrome()
             }
 
             packageName == mClock.packageName -> {
-                // Application Horloge : fallback vers l'horloge statique thématique
                 val clockThemedData = ThemeData(context.resources, R.drawable.themed_icon_static_clock)
                 CustomAdaptiveIconDrawable(
                     themedColors[0].toDrawable(),
@@ -207,13 +212,11 @@ class LawnchairIconProvider @Inject constructor(
             }
 
             packageName == mCalendar.packageName -> {
-                // Application Calendrier : applique l'icône calendrier dynamique
                 val themeData = getThemeDataForPackage(packageName)
                 loadCalendarDrawable(iconDpi, themeData)
             }
 
             else -> {
-                // Icône classique
                 val nativeThemed = componentName?.let { ThemedIconCompat.getThemedIcon(context, it) }
                 if (nativeThemed != null) {
                     CustomAdaptiveIconDrawable(
@@ -228,7 +231,7 @@ class LawnchairIconProvider @Inject constructor(
                             themeData.loadPaddedDrawable().apply { setTint(themedColors[1]) },
                         )
                     } else {
-                        (baseIcon as? AdaptiveIconDrawable)?.monochrome
+                        null // Retourne simplement null, le getIcon gérera le fallback
                     }
                 }
             }

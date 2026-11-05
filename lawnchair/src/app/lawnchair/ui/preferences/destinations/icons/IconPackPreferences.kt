@@ -113,12 +113,7 @@ fun IconPackPreferences(
                             wallpaper = wallpaper,
                             modifier = Modifier.fillMaxSize(),
                         )
-                        key(
-                            iconPackAdapter.state.value,
-                            themedIconPackAdapter.state.value,
-                            themedIconsAdapter.state.value,
-                            tintIconpack.state.value,
-                        ) {
+                        key(iconPackAdapter.state.value) {
                             DummyLauncherLayout(
                                 idp = invariantDeviceProfile(),
                                 modifier = Modifier.fillMaxSize(),
@@ -128,10 +123,8 @@ fun IconPackPreferences(
                 }
             }
         }
-
-                IconPackGrid(adapter = iconPackAdapter)
+        IconPackGrid(adapter = iconPackAdapter)
     }
-
 }
 
 @Composable
