@@ -54,7 +54,6 @@ import app.lawnchair.ui.preferences.components.layout.ExpandAndShrink
 import app.lawnchair.ui.preferences.components.layout.PreferenceGroup
 import app.lawnchair.ui.preferences.components.layout.PreferenceGroupHeading
 import app.lawnchair.ui.preferences.components.layout.PreferenceLayout
-import app.lawnchair.ui.preferences.pro.ProGate
 import com.android.launcher3.InvariantDeviceProfile
 import com.android.launcher3.R
 
@@ -69,44 +68,44 @@ fun DockPreferences(modifier: Modifier = Modifier) {
         backArrowVisible = !LocalIsExpandedScreen.current,
         modifier = modifier,
     ) {
-        ProGate(
-            lockedTitle = stringResource(id = R.string.dock_label),
-        ) {
-            val hotseatBgAdapter = prefs.hotseatBG.getAdapter()
 
-            MainSwitchPreference(adapter = prefs2.isHotseatEnabled.getAdapter(), label = stringResource(id = R.string.show_hotseat_title)) {
-                DockPreferencesPreview()
-                PreferenceGroup(heading = stringResource(id = R.string.style)) {
-                    SwitchPreference(
-                        adapter = hotseatBgAdapter,
-                        label = stringResource(id = R.string.hotseat_background),
-                    )
-                    ExpandAndShrink(
-                        visible = hotseatBgAdapter.state.value,
-                    ) {
-                        HotseatBackgroundSettings(prefs, prefs2)
-                    }
+        val hotseatBgAdapter = prefs.hotseatBG.getAdapter()
+
+        MainSwitchPreference(
+            adapter = prefs2.isHotseatEnabled.getAdapter(),
+            label = stringResource(id = R.string.show_hotseat_title),
+        ) {
+            DockPreferencesPreview()
+            PreferenceGroup(heading = stringResource(id = R.string.style)) {
+                SwitchPreference(
+                    adapter = hotseatBgAdapter,
+                    label = stringResource(id = R.string.hotseat_background),
+                )
+                ExpandAndShrink(
+                    visible = hotseatBgAdapter.state.value,
+                ) {
+                    HotseatBackgroundSettings(prefs, prefs2)
                 }
-                SearchBarPreference(SearchRoute.DOCK_SEARCH)
-                GridSettings(prefs, prefs2)
-                PreferenceGroup(heading = stringResource(id = R.string.icons)) {
-                    SwitchPreference(
-                        adapter = prefs2.enableLabelInDock.getAdapter(),
-                        label = stringResource(id = R.string.show_labels),
-                    )
-                    SwitchPreference(
-                        adapter = prefs2.showSuggestedAppsInDock.getAdapter(),
-                        label = stringResource(id = R.string.show_suggested_apps_in_dock),
-                        description = stringResource(id = R.string.show_suggested_apps_in_dock_description),
-                    )
-                    ClickablePreference(
-                        label = stringResource(id = R.string.add_app_drawer_icon),
-                        subtitle = stringResource(id = R.string.add_app_drawer_icon_description),
-                        onClick = {
-                            AppDrawerShortcutActivity.pinAppDrawerShortcut(context)
-                        },
-                    )
-                }
+            }
+            SearchBarPreference(SearchRoute.DOCK_SEARCH)
+            GridSettings(prefs, prefs2)
+            PreferenceGroup(heading = stringResource(id = R.string.icons)) {
+                SwitchPreference(
+                    adapter = prefs2.enableLabelInDock.getAdapter(),
+                    label = stringResource(id = R.string.show_labels),
+                )
+                SwitchPreference(
+                    adapter = prefs2.showSuggestedAppsInDock.getAdapter(),
+                    label = stringResource(id = R.string.show_suggested_apps_in_dock),
+                    description = stringResource(id = R.string.show_suggested_apps_in_dock_description),
+                )
+                ClickablePreference(
+                    label = stringResource(id = R.string.add_app_drawer_icon),
+                    subtitle = stringResource(id = R.string.add_app_drawer_icon_description),
+                    onClick = {
+                        AppDrawerShortcutActivity.pinAppDrawerShortcut(context)
+                    },
+                )
             }
         }
     }
@@ -172,13 +171,19 @@ fun GridSettings(prefs: PreferenceManager, prefs2: PreferenceManager2) {
     PreferenceGroup(heading = stringResource(id = R.string.grid)) {
         if (isFoldable) {
             SliderPreference(
-                label = stringResource(id = R.string.state_folded, stringResource(id = R.string.dock_icons)),
+                label = stringResource(
+                    id = R.string.state_folded,
+                    stringResource(id = R.string.dock_icons),
+                ),
                 adapter = hotseatColumnsAdapter,
                 step = 1,
                 valueRange = 3..10,
             )
             SliderPreference(
-                label = stringResource(id = R.string.state_unfolded, stringResource(id = R.string.dock_icons)),
+                label = stringResource(
+                    id = R.string.state_unfolded,
+                    stringResource(id = R.string.dock_icons),
+                ),
                 adapter = hotseatColumnsUnfoldedAdapter,
                 step = 1,
                 valueRange = 3..10,

@@ -83,49 +83,46 @@ fun HiddenAppsPreferences(
         modifier = modifier,
         isExpandedScreen = LocalIsExpandedScreen.current,
     ) { innerPadding ->
-        ProGate(
-            lockedTitle = stringResource(id = R.string.hidden_apps_label),
-        ) {
-            Crossfade(targetState = apps.isNotEmpty(), label = "") { present ->
-                if (present) {
-                    PreferenceLazyColumn(innerPadding, state = state) {
-                        val toggleHiddenApp = { app: App ->
-                            val key = app.key.toString()
-                            val newSet = apps.asSequence()
-                                .filter { hiddenApps.contains(it.key.toString()) }
-                                .map { it.key.toString() }
-                                .toMutableSet()
-                            val isHidden = !hiddenApps.contains(key)
-                            if (isHidden) newSet.add(key) else newSet.remove(key)
-                            adapter.onChange(newSet)
-                        }
-                        preferenceGroupItems(
-                            items = apps,
-                            isFirstChild = true,
-                        ) { _, app ->
-                            AppItem(
-                                app = app,
-                                onClick = {
-                                    mMSDLPlayerWrapper.playToken(MSDLToken.TAP_MEDIUM_EMPHASIS)
-                                    toggleHiddenApp(app)
-                                },
-                            ) {
-                                Checkbox(
-                                    checked = hiddenApps.contains(app.key.toString()),
-                                    onCheckedChange = null,
-                                )
-                            }
+
+        Crossfade(targetState = apps.isNotEmpty(), label = "") { present ->
+            if (present) {
+                PreferenceLazyColumn(innerPadding, state = state) {
+                    val toggleHiddenApp = { app: App ->
+                        val key = app.key.toString()
+                        val newSet = apps.asSequence()
+                            .filter { hiddenApps.contains(it.key.toString()) }
+                            .map { it.key.toString() }
+                            .toMutableSet()
+                        val isHidden = !hiddenApps.contains(key)
+                        if (isHidden) newSet.add(key) else newSet.remove(key)
+                        adapter.onChange(newSet)
+                    }
+                    preferenceGroupItems(
+                        items = apps,
+                        isFirstChild = true,
+                    ) { _, app ->
+                        AppItem(
+                            app = app,
+                            onClick = {
+                                mMSDLPlayerWrapper.playToken(MSDLToken.TAP_MEDIUM_EMPHASIS)
+                                toggleHiddenApp(app)
+                            },
+                        ) {
+                            Checkbox(
+                                checked = hiddenApps.contains(app.key.toString()),
+                                onCheckedChange = null,
+                            )
                         }
                     }
-                } else {
-                    PreferenceLazyColumn(innerPadding, enabled = false) {
-                        preferenceGroupItems(
-                            count = 20,
-                            isFirstChild = true,
-                        ) {
-                            AppItemPlaceholder {
-                                Spacer(Modifier.width(24.dp))
-                            }
+                }
+            } else {
+                PreferenceLazyColumn(innerPadding, enabled = false) {
+                    preferenceGroupItems(
+                        count = 20,
+                        isFirstChild = true,
+                    ) {
+                        AppItemPlaceholder {
+                            Spacer(Modifier.width(24.dp))
                         }
                     }
                 }

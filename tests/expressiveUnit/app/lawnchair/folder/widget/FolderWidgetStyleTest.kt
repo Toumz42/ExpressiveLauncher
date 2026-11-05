@@ -11,7 +11,7 @@ class FolderWidgetStyleTest {
     )
 
     @Test fun freeUser_getsDefaultsForProFields() {
-        val r = custom.resolve(isPro = false, defaults = d)
+        val r = custom.resolve(defaults = d)
         assertThat(r.columns).isEqualTo(4)
         assertThat(r.showLabels).isFalse()
         assertThat(r.backgroundColor).isEqualTo(0x112233)
@@ -21,14 +21,14 @@ class FolderWidgetStyleTest {
     }
 
     @Test fun proUser_getsCustomValues() {
-        val r = custom.resolve(isPro = true, defaults = d)
+        val r = custom.resolve(defaults = d)
         assertThat(r.backgroundColor).isEqualTo(0xFF0000)
         assertThat(r.iconScale).isEqualTo(0.8f)
     }
 
     @Test fun values_areClamped() {
         val r = FolderWidgetStyle(columns = 12, backgroundOpacity = 3f, iconScale = 2f, cornerRadiusPx = -5f)
-            .resolve(isPro = true, defaults = d)
+            .resolve(defaults = d)
         assertThat(r.columns).isEqualTo(6)
         assertThat(r.backgroundOpacity).isEqualTo(1f)
         assertThat(r.iconScale).isEqualTo(1.1f)
@@ -36,7 +36,7 @@ class FolderWidgetStyleTest {
     }
 
     @Test fun defaults_matchTheSpec() {
-        val r = FolderWidgetStyle().resolve(isPro = false, defaults = d)
+        val r = FolderWidgetStyle().resolve(defaults = d)
         assertThat(r.showLabels).isTrue()
         assertThat(r.showHeader).isTrue()
         assertThat(r.showNameBelow).isFalse()

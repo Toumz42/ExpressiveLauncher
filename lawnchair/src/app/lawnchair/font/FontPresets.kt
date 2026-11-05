@@ -33,5 +33,6 @@ object FontPresets {
     fun isFree(source: Source): Boolean = source == Source.SYSTEM || source == Source.BUNDLED
 
     @JvmStatic
-    fun sections(isPro: Boolean): List<Section> = if (isPro) listOf(Section.PRESETS, Section.IMPORTED, Section.CATALOG) else listOf(Section.PRESETS)
+    fun sections(): List<Section> =
+        listOf(Section.PRESETS, Section.IMPORTED, Section.CATALOG)
 }

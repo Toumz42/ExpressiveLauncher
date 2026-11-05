@@ -19,8 +19,6 @@ package app.lawnchair.smartspace.provider
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import androidx.core.content.edit
-import app.lawnchair.pro.ProManager
 import app.lawnchair.smartspace.model.SmartspaceAction
 import app.lawnchair.smartspace.model.SmartspaceTarget
 import app.lawnchair.util.broadcastReceiverFlow
@@ -30,9 +28,6 @@ import java.util.Locale
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.emitAll
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
 
@@ -48,8 +43,6 @@ class GlanceMessagesProvider(context: Context) :
         providerDescription = R.string.smartspace_glance_messages_description,
     ) {
 
-    // Resolved lazily on the collector's (main) thread.
-    private val isCakey: Flow<Boolean> = flow { emitAll(ProManager.INSTANCE.get(context).isCakey) }
 
     // TIME_TICK arrives every minute while the screen is on, so the message is current as soon as
     // the user looks, even after the device slept through a boundary.
@@ -66,27 +59,18 @@ class GlanceMessagesProvider(context: Context) :
         .map { }
         .onStart { emit(Unit) }
 
-    override val internalTargets: Flow<List<SmartspaceTarget>> = combine(isCakey, clock) { cakey, _ ->
-        selectGlanceMessage(LocalDateTime.now(), cakey, region())
+    override val internalTargets: Flow<List<SmartspaceTarget>> = combine( clock) {  _ ->
+        selectGlanceMessage(LocalDateTime.now(), region())
     }
         .distinctUntilChanged()
         .map { listOf(glanceMessageTarget(context.getString(it.textResId))) }
 
-    /** Cakey Edition turns daily messages on once. Laura can still switch them off afterwards. */
-    suspend fun enableOnceForCakey() {
-        ProManager.INSTANCE.get(context).isCakey.first { it }
-        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        if (prefs.getBoolean(KEY_CAKEY_ENABLED_ONCE, false)) return
-        enabledPref.set(true)
-        prefs.edit { putBoolean(KEY_CAKEY_ENABLED_ONCE, true) }
-    }
 
     private fun region(): String = context.resources.configuration.locales[0].country
         .ifEmpty { Locale.getDefault().country }
 
     private companion object {
         const val PREFS_NAME = "expressive_glance_messages"
-        const val KEY_CAKEY_ENABLED_ONCE = "cakey_enabled_once"
     }
 }
 

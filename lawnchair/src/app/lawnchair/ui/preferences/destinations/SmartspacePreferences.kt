@@ -57,7 +57,6 @@ import app.lawnchair.ui.preferences.components.controls.SwitchPreference
 import app.lawnchair.ui.preferences.components.layout.ExpandAndShrink
 import app.lawnchair.ui.preferences.components.layout.PreferenceGroup
 import app.lawnchair.ui.preferences.components.layout.PreferenceLayout
-import app.lawnchair.ui.preferences.pro.ProGate
 import app.lawnchair.ui.theme.isSelectedThemeDark
 import app.lawnchair.ui.theme.preferenceGroupColor
 import app.lawnchair.util.productStringId
@@ -114,11 +113,7 @@ fun SmartspacePreferences(
                         }
 
                         Smartspacer -> {
-                            ProGate(
-                                lockedTitle = stringResource(id = R.string.smartspacer_settings),
-                            ) {
-                                SmartspacerSettings()
-                            }
+                            SmartspacerSettings()
                         }
 
                         else -> {}
@@ -239,33 +234,31 @@ fun SmartspaceDateAndTimePreferences(
 
     val supportCustomizationFormat = calendar.formatCustomizationSupport
     if (supportCustomizationFormat) {
-        ProGate(
-            lockedTitle = stringResource(id = R.string.smartspace_date_and_time),
+
+
+        PreferenceGroup(
+            heading = stringResource(id = R.string.smartspace_date_and_time),
+            modifier = modifier.padding(top = 8.dp),
         ) {
-            PreferenceGroup(
-                heading = stringResource(id = R.string.smartspace_date_and_time),
-                modifier = modifier.padding(top = 8.dp),
-            ) {
-                ExpandAndShrink(visible = supportCustomizationFormat) {
-                    SwitchPreference(
-                        adapter = showDateAdapter,
-                        label = stringResource(id = R.string.smartspace_date),
-                        enabled = if (showDateAdapter.state.value) !calendarHasMinimumContent else true,
-                    )
-                }
-                ExpandAndShrink(visible = supportCustomizationFormat && showDateAdapter.state.value) {
-                    SmartspaceCalendarPreference()
-                }
-                ExpandAndShrink(visible = supportCustomizationFormat) {
-                    SwitchPreference(
-                        adapter = showTimeAdapter,
-                        label = stringResource(id = R.string.smartspace_time),
-                        enabled = if (showTimeAdapter.state.value) !calendarHasMinimumContent else true,
-                    )
-                }
-                ExpandAndShrink(visible = supportCustomizationFormat && showTimeAdapter.state.value) {
-                    SmartspaceTimeFormatPreference()
-                }
+            ExpandAndShrink(visible = supportCustomizationFormat) {
+                SwitchPreference(
+                    adapter = showDateAdapter,
+                    label = stringResource(id = R.string.smartspace_date),
+                    enabled = if (showDateAdapter.state.value) !calendarHasMinimumContent else true,
+                )
+            }
+            ExpandAndShrink(visible = supportCustomizationFormat && showDateAdapter.state.value) {
+                SmartspaceCalendarPreference()
+            }
+            ExpandAndShrink(visible = supportCustomizationFormat) {
+                SwitchPreference(
+                    adapter = showTimeAdapter,
+                    label = stringResource(id = R.string.smartspace_time),
+                    enabled = if (showTimeAdapter.state.value) !calendarHasMinimumContent else true,
+                )
+            }
+            ExpandAndShrink(visible = supportCustomizationFormat && showTimeAdapter.state.value) {
+                SmartspaceTimeFormatPreference()
             }
         }
     }

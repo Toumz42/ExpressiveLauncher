@@ -63,16 +63,11 @@ import app.lawnchair.folder.widget.FolderWidgetStyleEditor
 import app.lawnchair.folder.widget.FolderWidgetView
 import app.lawnchair.folder.widget.resolve
 import app.lawnchair.preferences2.preferenceManager2
-import app.lawnchair.pro.ProManager
-import app.lawnchair.pro.proManager
 import app.lawnchair.ui.preferences.components.colorpreference.pickers.CustomColorPicker
 import app.lawnchair.ui.preferences.components.controls.SwitchPreference
 import app.lawnchair.ui.preferences.components.layout.Chip
 import app.lawnchair.ui.preferences.components.layout.PreferenceGroup
 import app.lawnchair.ui.preferences.components.layout.PreferenceTemplate
-import app.lawnchair.ui.preferences.pro.ProBadge
-import app.lawnchair.ui.preferences.pro.ProGate
-import app.lawnchair.ui.preferences.pro.RedeemProDialog
 import app.lawnchair.util.navigationBarsOrDisplayCutoutPadding
 import app.lawnchair.util.resolveFolderBackgroundColor
 import com.android.launcher3.Launcher
@@ -93,11 +88,10 @@ fun FolderWidgetSettingsSheet(
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
-    val proManager = proManager()
-    val isPro by proManager.isPro.collectAsState()
-    val editor = remember(isPro) { FolderWidgetStyleEditor(isPro) }
+    val editor = remember { FolderWidgetStyleEditor() }
     val repository = remember { FolderWidgetStyleRepository.INSTANCE.get(context) }
-    val currentStyle by repository.observe(widget.mInfo.id).collectAsState(initial = FolderWidgetStyle())
+    val currentStyle by repository.observe(widget.mInfo.id)
+        .collectAsState(initial = FolderWidgetStyle())
 
     val prefs2 = preferenceManager2()
     val defaultOpacity by prefs2.folderBackgroundOpacity.get().collectAsState(initial = 1f)
@@ -124,8 +118,10 @@ fun FolderWidgetSettingsSheet(
     var showColorDialog by remember { mutableStateOf(false) }
 
     val density = LocalDensity.current.density
-    val widgetWidthPx = widget.width.takeIf { it > 0 } ?: (widget.mInfo.spanX * 80 * density).roundToInt()
-    val widgetHeightPx = widget.height.takeIf { it > 0 } ?: (widget.mInfo.spanY * 80 * density).roundToInt()
+    val widgetWidthPx =
+        widget.width.takeIf { it > 0 } ?: (widget.mInfo.spanX * 80 * density).roundToInt()
+    val widgetHeightPx =
+        widget.height.takeIf { it > 0 } ?: (widget.mInfo.spanY * 80 * density).roundToInt()
     val shorterSidePx = min(widgetWidthPx, widgetHeightPx)
     val maxRadiusPx = (shorterSidePx / 2f).coerceAtLeast(1f)
 
@@ -223,13 +219,14 @@ fun FolderWidgetSettingsSheet(
                                 },
                             factory = { ctx ->
                                 FolderWidgetPanel(ctx).also {
-                                    it.layoutParams = ViewGroup.LayoutParams(widgetWidthPx, widgetHeightPx)
+                                    it.layoutParams =
+                                        ViewGroup.LayoutParams(widgetWidthPx, widgetHeightPx)
                                     previewPanel = it
                                 }
                             },
                             update = { panel ->
                                 previewPanel = panel
-                                val resolved = currentStyle.resolve(isPro, defaults)
+                                val resolved = currentStyle.resolve(defaults)
                                 panel.bind(
                                     title = widget.mInfo.title ?: "",
                                     adapter = previewAdapter,
@@ -315,92 +312,73 @@ fun FolderWidgetSettingsSheet(
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
             ) {
                 // Background color
-                ProGate(
-                    lockedContent = {
-                        LockedPreferenceRow(title = stringResource(R.string.folder_widget_background_color))
+                val currentColor = currentStyle.backgroundColor ?: defaultBgColor
+                PreferenceTemplate(
+                    title = { Text(text = stringResource(R.string.folder_widget_background_color)) },
+                    description = {
+                        Text(
+                            text = if (currentStyle.backgroundColor != null) {
+                                String.format("#%06X", 0xFFFFFF and currentStyle.backgroundColor!!)
+                            } else {
+                                stringResource(R.string.folder_widget_default)
+                            },
+                        )
                     },
-                ) {
-                    val currentColor = currentStyle.backgroundColor ?: defaultBgColor
-                    PreferenceTemplate(
-                        title = { Text(text = stringResource(R.string.folder_widget_background_color)) },
-                        description = {
-                            Text(
-                                text = if (currentStyle.backgroundColor != null) {
-                                    String.format("#%06X", 0xFFFFFF and currentStyle.backgroundColor!!)
-                                } else {
-                                    stringResource(R.string.folder_widget_default)
-                                },
-                            )
-                        },
-                        endWidget = {
-                            Box(
-                                modifier = Modifier
-                                    .size(32.dp)
-                                    .clip(CircleShape)
-                                    .background(Color(currentColor))
-                                    .border(1.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape),
-                            )
-                        },
-                        onClick = { showColorDialog = true },
-                    )
-                }
-
+                    endWidget = {
+                        Box(
+                            modifier = Modifier
+                                .size(32.dp)
+                                .clip(CircleShape)
+                                .background(Color(currentColor))
+                                .border(
+                                    1.dp,
+                                    MaterialTheme.colorScheme.outlineVariant,
+                                    CircleShape,
+                                ),
+                        )
+                    },
+                    onClick = { showColorDialog = true },
+                )
                 // Background opacity
-                ProGate(
-                    lockedContent = {
-                        LockedPreferenceRow(title = stringResource(R.string.folder_widget_background_opacity))
+                val opacity = currentStyle.backgroundOpacity ?: defaults.backgroundOpacity
+                StyleSliderRow(
+                    label = stringResource(R.string.folder_widget_background_opacity),
+                    valueText = stringResource(R.string.n_percent, (opacity * 100).roundToInt()),
+                    value = opacity,
+                    valueRange = 0f..1f,
+                    onValueChange = { newOpacity ->
+                        saveStyle(editor.withBackgroundOpacity(currentStyle, newOpacity))
                     },
-                ) {
-                    val opacity = currentStyle.backgroundOpacity ?: defaults.backgroundOpacity
-                    StyleSliderRow(
-                        label = stringResource(R.string.folder_widget_background_opacity),
-                        valueText = stringResource(R.string.n_percent, (opacity * 100).roundToInt()),
-                        value = opacity,
-                        valueRange = 0f..1f,
-                        onValueChange = { newOpacity ->
-                            saveStyle(editor.withBackgroundOpacity(currentStyle, newOpacity))
-                        },
-                    )
-                }
-
+                )
                 // Corner radius
-                ProGate(
-                    lockedContent = {
-                        LockedPreferenceRow(title = stringResource(R.string.folder_widget_corner_radius))
+                val currentRadius = currentStyle.cornerRadiusPx ?: defaults.cornerRadiusPx
+                val radiusInDp = (currentRadius / density).roundToInt()
+                StyleSliderRow(
+                    label = stringResource(R.string.folder_widget_corner_radius),
+                    valueText = "$radiusInDp dp",
+                    value = currentRadius.coerceIn(0f, maxRadiusPx),
+                    valueRange = 0f..maxRadiusPx,
+                    onValueChange = { newRadius ->
+                        saveStyle(editor.withCornerRadius(currentStyle, newRadius))
                     },
-                ) {
-                    val currentRadius = currentStyle.cornerRadiusPx ?: defaults.cornerRadiusPx
-                    val radiusInDp = (currentRadius / density).roundToInt()
-                    StyleSliderRow(
-                        label = stringResource(R.string.folder_widget_corner_radius),
-                        valueText = "$radiusInDp dp",
-                        value = currentRadius.coerceIn(0f, maxRadiusPx),
-                        valueRange = 0f..maxRadiusPx,
-                        onValueChange = { newRadius ->
-                            saveStyle(editor.withCornerRadius(currentStyle, newRadius))
-                        },
-                    )
-                }
-
+                )
                 // Icon size
-                ProGate(
-                    lockedContent = {
-                        LockedPreferenceRow(title = stringResource(R.string.folder_widget_icon_size))
+                val currentScale = currentStyle.iconScale ?: 1f
+                StyleSliderRow(
+                    label = stringResource(R.string.folder_widget_icon_size),
+                    valueText = stringResource(
+                        R.string.n_percent,
+                        (currentScale * 100).roundToInt(),
+                    ),
+                    value = currentScale,
+                    valueRange = FolderWidgetStyle.MIN_ICON_SCALE..FolderWidgetStyle.MAX_ICON_SCALE,
+                    steps = 8,
+                    onValueChange = { newScale ->
+                        saveStyle(editor.withIconScale(currentStyle, newScale))
                     },
-                ) {
-                    val currentScale = currentStyle.iconScale ?: 1f
-                    StyleSliderRow(
-                        label = stringResource(R.string.folder_widget_icon_size),
-                        valueText = stringResource(R.string.n_percent, (currentScale * 100).roundToInt()),
-                        value = currentScale,
-                        valueRange = FolderWidgetStyle.MIN_ICON_SCALE..FolderWidgetStyle.MAX_ICON_SCALE,
-                        steps = 8,
-                        onValueChange = { newScale ->
-                            saveStyle(editor.withIconScale(currentStyle, newScale))
-                        },
-                    )
-                }
+                )
             }
+
         }
     }
 
@@ -516,12 +494,12 @@ private fun LockedPreferenceRow(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Spacer(Modifier.width(8.dp))
-                ProBadge()
             }
         },
         description = {
             Text(
-                text = stringResource(R.string.expressive_pro_locked_customization),
+//                text = stringResource(R.string.expressive_pro_locked_customization),
+                text = "Test",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
             )
@@ -535,8 +513,4 @@ private fun LockedPreferenceRow(
             )
         },
     )
-
-    if (showRedeemDialog) {
-        RedeemProDialog(onDismiss = { showRedeemDialog = false })
-    }
 }

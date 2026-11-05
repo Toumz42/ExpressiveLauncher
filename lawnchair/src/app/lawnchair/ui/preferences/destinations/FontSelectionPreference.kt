@@ -51,7 +51,6 @@ import app.lawnchair.font.googlefonts.GoogleFontsListing
 import app.lawnchair.preferences.BasePreferenceManager
 import app.lawnchair.preferences.PreferenceAdapter
 import app.lawnchair.preferences.getAdapter
-import app.lawnchair.pro.proManager
 import app.lawnchair.ui.AndroidText
 import app.lawnchair.ui.OverflowMenu
 import app.lawnchair.ui.preferences.components.layout.PreferenceDivider
@@ -79,7 +78,6 @@ fun FontSelection(
     val mMSDLPlayerWrapper = MSDLPlayerWrapper.INSTANCE.get(context)
     val customFonts by remember { FontCache.INSTANCE.get(context).customFonts }.collectAsStateWithLifecycle(initialValue = emptyList())
     // Expressive: preloaded styles are free; importing fonts and the Google Fonts catalog are Pro.
-    val isPro by proManager().isPro.collectAsState()
     val presets = remember {
         buildList {
             FontPresets.SYSTEM_PRESETS.forEach { preset ->
@@ -103,8 +101,8 @@ fun FontSelection(
             FontCache.Family(font.family, variantsMap)
         }
     }
-    val items by remember { derivedStateOf { if (isPro) presets + catalog else presets } }
-    val allItems by remember { derivedStateOf { if (isPro) items + customFonts else items } }
+    val items by remember { derivedStateOf { presets + catalog } }
+    val allItems by remember { derivedStateOf {  items + customFonts } }
     val adapter = fontPref.getAdapter()
     var searchQuery by remember { mutableStateOf("") }
 

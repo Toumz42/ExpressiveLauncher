@@ -52,7 +52,6 @@ import app.lawnchair.ui.preferences.components.layout.ExpandAndShrink
 import app.lawnchair.ui.preferences.components.layout.PreferenceGroup
 import app.lawnchair.ui.preferences.components.layout.PreferenceTemplate
 import app.lawnchair.ui.preferences.navigation.DockSearchProvider
-import app.lawnchair.ui.preferences.pro.ProGate
 import app.lawnchair.ui.theme.isSelectedThemeDark
 import app.lawnchair.ui.theme.preferenceGroupColor
 import com.android.launcher3.R
@@ -96,10 +95,7 @@ fun DockSearchPreference(
                     }
                 }
                 ExpandAndShrink(visible = isLawnchairHotseat) {
-                    ProGate(
-                        lockedTitle = stringResource(R.string.search_bar_settings),
-                    ) {
-                        Column {
+                    Column {
                             PreferenceGroup(
                                 heading = stringResource(R.string.search_bar_settings),
                             ) {
@@ -146,7 +142,6 @@ fun DockSearchPreference(
                                 }
                             }
                         }
-                    }
                 }
             }
         } else {

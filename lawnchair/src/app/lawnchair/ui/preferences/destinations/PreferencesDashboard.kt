@@ -238,16 +238,12 @@ fun PreferencesDashboard(
 
             ExpandAndShrink(visible = advancedExpanded) {
                 Column(verticalArrangement = Arrangement.spacedBy(ListItemDefaults.SegmentedGap)) {
-                    val isPro = rememberIsPro()
-                    val showProBadge = !isPro
-
                     PreferenceCategory(
                         label = stringResource(R.string.dock_label),
                         description = stringResource(R.string.dock_description),
                         iconResource = R.drawable.ic_dock,
                         onNavigate = { onNavigate(Dock) },
                         isSelected = currentRoute is Dock,
-                        showProBadge = showProBadge,
                     )
 
                     PreferenceCategory(
@@ -256,7 +252,6 @@ fun PreferencesDashboard(
                         iconResource = R.drawable.ic_folder,
                         onNavigate = { onNavigate(Folders) },
                         isSelected = currentRoute is Folders,
-                        showProBadge = showProBadge,
                     )
 
                     PreferenceCategory(
@@ -265,7 +260,6 @@ fun PreferencesDashboard(
                         iconResource = R.drawable.ic_gestures,
                         onNavigate = { onNavigate(Gestures) },
                         isSelected = currentRoute is Gestures,
-                        showProBadge = showProBadge,
                     )
 
                     ExpandAndShrink(

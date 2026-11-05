@@ -103,10 +103,6 @@ class SmartspaceProvider @Inject constructor(
         featureType = SmartspaceTarget.FeatureType.FEATURE_TIPS,
     )
 
-    init {
-        scope.launch { glanceMessages.enableOnceForCakey() }
-    }
-
     suspend fun startSetup(activity: Activity, lifecycle: Lifecycle) {
         setupCoordinator.collectRequests(
             requests = state.map { it.requiresSetup },

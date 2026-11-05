@@ -34,7 +34,6 @@ import app.lawnchair.ui.preferences.components.layout.ExpandAndShrink
 import app.lawnchair.ui.preferences.components.layout.PreferenceGroup
 import app.lawnchair.ui.preferences.components.layout.PreferenceLayout
 import app.lawnchair.ui.preferences.navigation.GeneralIconShape
-import app.lawnchair.ui.preferences.pro.ProGate
 import com.android.launcher3.R
 
 @Composable
@@ -46,20 +45,18 @@ fun FolderPreferences(
         backArrowVisible = !LocalIsExpandedScreen.current,
         modifier = modifier,
     ) {
-        ProGate(
-            lockedTitle = stringResource(id = R.string.folders_label),
-        ) {
-            val context = LocalContext.current
-            val prefs = preferenceManager()
-            val prefs2 = preferenceManager2()
-            val folderIconShapeAdapter = prefs2.folderShape.getAdapter()
-            val appIconShape = prefs2.iconShape.getAdapter().state.value
-            val folderShapeMatch = prefs2.folderShapeMatchesIconShape.getAdapter()
-            val matchesAppIconShape = FolderShapeMatchPolicy.matchesIconShape(
-                match = folderShapeMatch.state.value,
-                folderShapeIsDefault = folderIconShapeAdapter.state.value.toString() ==
-                    prefs2.folderShape.defaultValue.toString(),
-            )
+
+        val context = LocalContext.current
+        val prefs = preferenceManager()
+        val prefs2 = preferenceManager2()
+        val folderIconShapeAdapter = prefs2.folderShape.getAdapter()
+        val appIconShape = prefs2.iconShape.getAdapter().state.value
+        val folderShapeMatch = prefs2.folderShapeMatchesIconShape.getAdapter()
+        val matchesAppIconShape = FolderShapeMatchPolicy.matchesIconShape(
+            match = folderShapeMatch.state.value,
+            folderShapeIsDefault = folderIconShapeAdapter.state.value.toString() ==
+                prefs2.folderShape.defaultValue.toString(),
+        )
             val folderIconShapeSubtitle = iconShapeEntries(context)
                 .firstOrNull { it.value == folderIconShapeAdapter.state.value }
                 ?.label?.invoke()
@@ -142,4 +139,3 @@ fun FolderPreferences(
             }
         }
     }
-}

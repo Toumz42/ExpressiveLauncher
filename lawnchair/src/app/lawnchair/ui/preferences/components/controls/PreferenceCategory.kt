@@ -63,7 +63,6 @@ fun PreferenceCategory(
     modifier: Modifier = Modifier,
     isSelected: Boolean = false,
     description: String? = null,
-    showProBadge: Boolean = false,
     opensSystemSettings: Boolean = false,
     endWidget: (@Composable () -> Unit)? = null,
 ) {
@@ -99,10 +98,6 @@ fun PreferenceCategory(
                     text = label,
                     color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
                 )
-                if (showProBadge) {
-                    Spacer(Modifier.width(8.dp))
-                    ProBadge()
-                }
             }
         },
         modifier = modifier

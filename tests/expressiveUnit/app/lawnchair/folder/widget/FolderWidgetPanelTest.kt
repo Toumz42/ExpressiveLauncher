@@ -23,7 +23,7 @@ class FolderWidgetPanelTest {
         spanX = 2, homeIconSizePx = 150, labelHeightPx = 45,
         iconLabelGapPx = 12, rowSpacingPx = 18, minTouchPx = 144, paddingPx = 24, headerHeightPx = 96,
     )
-    private val style = FolderWidgetStyle().resolve(false, FolderWidgetDefaults(0x333333, 0.8f, 84f))
+    private val style = FolderWidgetStyle().resolve( FolderWidgetDefaults(0x333333, 0.8f, 84f))
 
     private fun panel(items: Int, s: ResolvedFolderWidgetStyle = style) = FolderWidgetPanel(context).apply {
         bind("Google", FakeAdapter(items), s, metrics)

@@ -26,8 +26,8 @@ class FontPresetsTest {
 
     @Test
     fun sectionsShownDependOnPro() {
-        assertThat(FontPresets.sections(isPro = false)).containsExactly(FontPresets.Section.PRESETS)
-        assertThat(FontPresets.sections(isPro = true))
+        assertThat(FontPresets.sections()).containsExactly(FontPresets.Section.PRESETS)
+        assertThat(FontPresets.sections())
             .containsExactly(FontPresets.Section.PRESETS, FontPresets.Section.IMPORTED, FontPresets.Section.CATALOG)
             .inOrder()
     }

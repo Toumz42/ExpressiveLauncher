@@ -38,14 +38,14 @@ data class ResolvedFolderWidgetStyle(
     val iconScale: Float,
 )
 
-fun FolderWidgetStyle.resolve(isPro: Boolean, defaults: FolderWidgetDefaults): ResolvedFolderWidgetStyle = ResolvedFolderWidgetStyle(
+fun FolderWidgetStyle.resolve(defaults: FolderWidgetDefaults): ResolvedFolderWidgetStyle = ResolvedFolderWidgetStyle(
     columns = columns?.coerceIn(FolderWidgetGridMath.MIN_COLUMN_OVERRIDE, FolderWidgetGridMath.MAX_COLUMNS),
     showLabels = showLabels,
     showHeader = showHeader,
     showNameBelow = showNameBelow,
-    backgroundColor = backgroundColor?.takeIf { isPro } ?: defaults.backgroundColor,
-    backgroundOpacity = (backgroundOpacity?.takeIf { isPro } ?: defaults.backgroundOpacity).coerceIn(0f, 1f),
-    cornerRadiusPx = (cornerRadiusPx?.takeIf { isPro } ?: defaults.cornerRadiusPx).coerceAtLeast(0f),
-    iconScale = (iconScale?.takeIf { isPro } ?: 1f)
+    backgroundColor = backgroundColor ?: defaults.backgroundColor,
+    backgroundOpacity = (backgroundOpacity ?: defaults.backgroundOpacity).coerceIn(0f, 1f),
+    cornerRadiusPx = (cornerRadiusPx ?: defaults.cornerRadiusPx).coerceAtLeast(0f),
+    iconScale = (iconScale ?: 1f)
         .coerceIn(FolderWidgetStyle.MIN_ICON_SCALE, FolderWidgetStyle.MAX_ICON_SCALE),
 )

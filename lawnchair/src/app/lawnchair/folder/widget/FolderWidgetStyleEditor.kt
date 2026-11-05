@@ -1,6 +1,6 @@
 package app.lawnchair.folder.widget
 
-class FolderWidgetStyleEditor(private val isPro: Boolean) {
+class FolderWidgetStyleEditor() {
     fun withColumns(s: FolderWidgetStyle, c: Int?): FolderWidgetStyle = s.copy(columns = c)
 
     fun withShowLabels(s: FolderWidgetStyle, v: Boolean): FolderWidgetStyle = s.copy(showLabels = v)
@@ -9,13 +9,17 @@ class FolderWidgetStyleEditor(private val isPro: Boolean) {
 
     fun withShowNameBelow(s: FolderWidgetStyle, v: Boolean): FolderWidgetStyle = s.copy(showNameBelow = v)
 
-    fun withBackgroundColor(s: FolderWidgetStyle, c: Int?): FolderWidgetStyle = if (isPro) s.copy(backgroundColor = c) else s
+    fun withBackgroundColor(s: FolderWidgetStyle, c: Int?): FolderWidgetStyle =
+        s.copy(backgroundColor = c)
 
-    fun withBackgroundOpacity(s: FolderWidgetStyle, o: Float?): FolderWidgetStyle = if (isPro) s.copy(backgroundOpacity = o) else s
+    fun withBackgroundOpacity(s: FolderWidgetStyle, o: Float?): FolderWidgetStyle =
+        s.copy(backgroundOpacity = o)
 
-    fun withCornerRadius(s: FolderWidgetStyle, r: Float?): FolderWidgetStyle = if (isPro) s.copy(cornerRadiusPx = r) else s
+    fun withCornerRadius(s: FolderWidgetStyle, r: Float?): FolderWidgetStyle =
+        s.copy(cornerRadiusPx = r)
 
-    fun withIconScale(s: FolderWidgetStyle, k: Float?): FolderWidgetStyle = if (isPro) s.copy(iconScale = k) else s
+    fun withIconScale(s: FolderWidgetStyle, k: Float?): FolderWidgetStyle =
+        s.copy(iconScale = k)
 
     fun reset(): FolderWidgetStyle = FolderWidgetStyle()
 }

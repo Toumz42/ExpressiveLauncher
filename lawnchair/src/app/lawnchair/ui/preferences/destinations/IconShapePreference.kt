@@ -65,7 +65,6 @@ import app.lawnchair.ui.preferences.components.layout.PreferenceGroup
 import app.lawnchair.ui.preferences.components.layout.PreferenceTemplate
 import app.lawnchair.ui.preferences.components.layout.TwoTabPreferenceLayout
 import app.lawnchair.ui.preferences.navigation.GeneralCustomIconShapeCreator
-import app.lawnchair.ui.preferences.pro.ProGate
 import com.android.launcher3.R
 
 @Keep // This is refed by a Kotlin serializer, we must keep it's fully qualified name.
@@ -148,47 +147,44 @@ private fun ShapeTabContent(currentTab: ShapeRoute) {
         ShapeRoute.FOLDER_SHAPE -> preferenceManager2.customFolderShape.asState()
     }
 
-    ProGate(
-        lockedTitle = stringResource(id = R.string.icon_shape_label),
+
+    PreferenceGroup(
+        heading = stringResource(id = R.string.custom),
     ) {
-        PreferenceGroup(
-            heading = stringResource(id = R.string.custom),
-        ) {
-            customShape?.let { shape ->
-                CustomIconShapePreferenceOption(
-                    iconShapeAdapter = shapeAdapter,
-                    customIconShape = shape,
-                )
-            }
-            ModifyCustomIconShapePreference(
-                customIconShape = customShape,
-                currentTab = currentTab,
+        customShape?.let { shape ->
+            CustomIconShapePreferenceOption(
+                iconShapeAdapter = shapeAdapter,
+                customIconShape = shape,
             )
         }
-        PreferenceGroup(
-            heading = stringResource(id = R.string.presets),
-        ) {
-            entries.forEach { item ->
-                PreferenceTemplate(
-                    title = { Text(item.label()) },
-                    enabled = item.enabled,
-                    startWidget = {
-                        RadioButton(
-                            selected = item.value == shapeAdapter.state.value,
-                            onClick = null,
-                            enabled = item.enabled,
-                        )
-                    },
-                    endWidget = {
-                        IconShapePreview(iconShape = item.value)
-                    },
-                    onClick = if (item.enabled) {
-                        { shapeAdapter.onChange(newValue = item.value) }
-                    } else {
-                        null
-                    },
-                )
-            }
+        ModifyCustomIconShapePreference(
+            customIconShape = customShape,
+            currentTab = currentTab,
+        )
+    }
+    PreferenceGroup(
+        heading = stringResource(id = R.string.presets),
+    ) {
+        entries.forEach { item ->
+            PreferenceTemplate(
+                title = { Text(item.label()) },
+                enabled = item.enabled,
+                startWidget = {
+                    RadioButton(
+                        selected = item.value == shapeAdapter.state.value,
+                        onClick = null,
+                        enabled = item.enabled,
+                    )
+                },
+                endWidget = {
+                    IconShapePreview(iconShape = item.value)
+                },
+                onClick = if (item.enabled) {
+                    { shapeAdapter.onChange(newValue = item.value) }
+                } else {
+                    null
+                },
+            )
         }
     }
 }
@@ -273,9 +269,11 @@ fun IconShapePreview(
     ) {
         val dx = (size.width - bounds.width) / 2f - bounds.left
         val dy = (size.height - bounds.height) / 2f - bounds.top
-        withTransform({
-            translate(dx, dy)
-        }) {
+        withTransform(
+            {
+                translate(dx, dy)
+            },
+        ) {
             drawPath(
                 path = path,
                 color = fillColor,

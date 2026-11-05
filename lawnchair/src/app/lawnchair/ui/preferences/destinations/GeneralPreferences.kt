@@ -55,7 +55,6 @@ import app.lawnchair.ui.preferences.data.liveinfo.LiveInformationAvailability
 import app.lawnchair.ui.preferences.data.liveinfo.liveInformationManager
 import app.lawnchair.ui.preferences.navigation.GeneralIconPack
 import app.lawnchair.ui.preferences.navigation.GeneralIconShape
-import app.lawnchair.ui.preferences.pro.ProGate
 import com.android.launcher3.BuildConfig
 import com.android.launcher3.R
 import com.android.launcher3.Utilities
@@ -105,7 +104,8 @@ fun GeneralPreferences(modifier: Modifier = Modifier) {
             )
         }
         val isNightly = BuildConfig.APPLICATION_ID.contains("nightly")
-        val liveInformationAvailable = LiveInformationAvailability.isAvailable(BuildConfig.STANDARD_HOME_ONLY)
+        val liveInformationAvailable =
+            LiveInformationAvailability.isAvailable(BuildConfig.STANDARD_HOME_ONLY)
         if (LiveInformationAvailability.showsUpdatesGroup(isNightly, liveInformationAvailable)) {
             PreferenceGroup(heading = stringResource(id = R.string.updater)) {
                 if (isNightly) {
@@ -154,59 +154,58 @@ fun GeneralPreferences(modifier: Modifier = Modifier) {
         val wrapAdaptiveIcons = prefs.wrapAdaptiveIcons.getAdapter()
         val transparentIconBackground = prefs.transparentIconBackground.getAdapter()
 
-        ProGate(
-            lockedTitle = stringResource(id = R.string.icons),
+
+        PreferenceGroup(
+            modifier = Modifier,
+            heading = stringResource(id = R.string.icons),
+            description = stringResource(id = (R.string.adaptive_icon_background_description)),
+            showDescription = wrapAdaptiveIcons.state.value,
         ) {
-            PreferenceGroup(
-                modifier = Modifier,
-                heading = stringResource(id = R.string.icons),
-                description = stringResource(id = (R.string.adaptive_icon_background_description)),
-                showDescription = wrapAdaptiveIcons.state.value,
-            ) {
-                NavigationActionPreference(
-                    label = stringResource(id = R.string.icon_style_label),
-                    destination = GeneralIconPack,
-                    subtitle = iconStyleSubtitle,
-                )
-                ExpandAndShrink(visible = themedIconsEnabled) {
-                    SwitchPreference(
-                        adapter = transparentIconBackground,
-                        label = stringResource(id = R.string.transparent_background_icons_label),
-                        description = stringResource(id = R.string.transparent_background_icons_description),
-                    )
-                }
-                NavigationActionPreference(
-                    label = stringResource(id = R.string.icon_shape_label),
-                    destination = GeneralIconShape(ShapeRoute.APP_SHAPE),
-                    subtitle = iconShapeSubtitle,
-                    endWidget = {
-                        IconShapePreview(iconShape = iconShapeAdapter.state.value)
-                    },
-                )
+            NavigationActionPreference(
+                label = stringResource(id = R.string.icon_style_label),
+                destination = GeneralIconPack,
+                subtitle = iconStyleSubtitle,
+            )
+            ExpandAndShrink(visible = themedIconsEnabled) {
                 SwitchPreference(
-                    adapter = wrapAdaptiveIcons,
-                    label = stringResource(id = R.string.auto_adaptive_icons_label),
-                    description = stringResource(id = R.string.auto_adaptive_icons_description),
+                    adapter = transparentIconBackground,
+                    label = stringResource(id = R.string.transparent_background_icons_label),
+                    description = stringResource(id = R.string.transparent_background_icons_description),
                 )
-                SwitchPreference(
-                    adapter = prefs.shadowBGIcons.getAdapter(),
-                    label = stringResource(id = R.string.shadow_bg_icons_label),
+            }
+            NavigationActionPreference(
+                label = stringResource(id = R.string.icon_shape_label),
+                destination = GeneralIconShape(ShapeRoute.APP_SHAPE),
+                subtitle = iconShapeSubtitle,
+                endWidget = {
+                    IconShapePreview(iconShape = iconShapeAdapter.state.value)
+                },
+            )
+            SwitchPreference(
+                adapter = wrapAdaptiveIcons,
+                label = stringResource(id = R.string.auto_adaptive_icons_label),
+                description = stringResource(id = R.string.auto_adaptive_icons_description),
+            )
+            SwitchPreference(
+                adapter = prefs.shadowBGIcons.getAdapter(),
+                label = stringResource(id = R.string.shadow_bg_icons_label),
+            )
+            ExpandAndShrink(visible = wrapAdaptiveIcons.state.value && !transparentIconBackground.state.value) {
+                SliderPreference(
+                    label = stringResource(id = R.string.background_lightness_label),
+                    adapter = prefs.coloredBackgroundLightness.getAdapter(),
+                    valueRange = 0F..1F,
+                    step = 0.1f,
+                    showAsPercentage = true,
                 )
-                ExpandAndShrink(visible = wrapAdaptiveIcons.state.value && !transparentIconBackground.state.value) {
-                    SliderPreference(
-                        label = stringResource(id = R.string.background_lightness_label),
-                        adapter = prefs.coloredBackgroundLightness.getAdapter(),
-                        valueRange = 0F..1F,
-                        step = 0.1f,
-                        showAsPercentage = true,
-                    )
-                }
             }
         }
 
+
         val accentColorAdapter = prefs2.accentColor.getAdapter()
-        val showColorStyle = !(Utilities.ATLEAST_S && accentColorAdapter.state.value == ColorOption.SystemAccent) ||
-            !Utilities.ATLEAST_S
+        val showColorStyle =
+            !(Utilities.ATLEAST_S && accentColorAdapter.state.value == ColorOption.SystemAccent) ||
+                !Utilities.ATLEAST_S
 
         PreferenceGroup(heading = stringResource(id = R.string.colors)) {
             ThemePreference()
@@ -217,19 +216,19 @@ fun GeneralPreferences(modifier: Modifier = Modifier) {
                     description = stringResource(id = R.string.frosted_glass_description),
                 )
             }
-            ProGate(
-                lockedTitle = stringResource(id = R.string.accent_color),
-            ) {
-                Column {
-                    ColorPreference(preference = prefs2.accentColor)
-                    ExpandAndShrink(visible = showColorStyle) {
-                        ColorStylePreference(prefs2.colorStyle.getAdapter())
-                    }
+
+            Column {
+                ColorPreference(preference = prefs2.accentColor)
+                ExpandAndShrink(visible = showColorStyle) {
+                    ColorStylePreference(prefs2.colorStyle.getAdapter())
                 }
             }
         }
 
-        val notificationEnabled by remember { notificationDotsEnabled(context) }.collectAsStateWithLifecycle(initialValue = false)
+
+        val notificationEnabled by remember { notificationDotsEnabled(context) }.collectAsStateWithLifecycle(
+            initialValue = false,
+        )
         val serviceEnabled = notificationServiceEnabled()
         val showNotificationCountAdapter = prefs2.showNotificationCount.getAdapter()
         val showNotificationCount = showNotificationCountAdapter.state.value
@@ -245,29 +244,30 @@ fun GeneralPreferences(modifier: Modifier = Modifier) {
                 )
                 return@PreferenceGroup
             }
-            NotificationDotsPreference(enabled = notificationEnabled, serviceEnabled = serviceEnabled)
+            NotificationDotsPreference(
+                enabled = notificationEnabled,
+                serviceEnabled = serviceEnabled,
+            )
             val canDisplayNotificationDot = notificationEnabled && serviceEnabled
             if (canDisplayNotificationDot) {
-                ProGate(
-                    lockedTitle = stringResource(id = R.string.notification_dots),
-                ) {
-                    Column {
-                        ColorPreference(preference = prefs2.notificationDotColor)
-                        SwitchPreference(
-                            adapter = showNotificationCountAdapter,
-                            label = stringResource(id = R.string.show_notification_count),
+
+                Column {
+                    ColorPreference(preference = prefs2.notificationDotColor)
+                    SwitchPreference(
+                        adapter = showNotificationCountAdapter,
+                        label = stringResource(id = R.string.show_notification_count),
+                    )
+                    ExpandAndShrink(visible = showNotificationCount) {
+                        ColorPreference(preference = prefs2.notificationDotTextColor)
+                    }
+                    ExpandAndShrink(visible = showNotificationCount) {
+                        NotificationDotColorContrastWarnings(
+                            dotColor = dotColor,
+                            dotTextColor = dotTextColor,
                         )
-                        ExpandAndShrink(visible = showNotificationCount) {
-                            ColorPreference(preference = prefs2.notificationDotTextColor)
-                        }
-                        ExpandAndShrink(visible = showNotificationCount) {
-                            NotificationDotColorContrastWarnings(
-                                dotColor = dotColor,
-                                dotTextColor = dotTextColor,
-                            )
-                        }
                     }
                 }
+
             }
         }
     }
@@ -305,7 +305,7 @@ private fun NotificationDotColorContrastWarnings(
         is ColorOption.SystemAccent,
         is ColorOption.WallpaperPrimary,
         is ColorOption.Default,
-        -> true
+            -> true
 
         else -> false
     }

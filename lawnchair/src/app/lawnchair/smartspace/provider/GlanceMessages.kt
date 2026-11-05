@@ -45,10 +45,6 @@ internal data class CakeySpecialDate(
     @StringRes val messageResId: Int,
 )
 
-internal val CAKEY_SPECIAL_DATES = listOf(
-    CakeySpecialDate(MonthDay.of(Month.FEBRUARY, 11), R.string.glance_cakey_birthday),
-    CakeySpecialDate(MonthDay.of(Month.OCTOBER, 5), R.string.glance_cakey_anniversary),
-)
 
 /**
  * Holidays shown to everyone who turns daily messages on. A null [regions] means everywhere;
@@ -56,18 +52,15 @@ internal val CAKEY_SPECIAL_DATES = listOf(
  */
 internal enum class Holiday(
     @StringRes val messageResId: Int,
-    @StringRes val cakeyMessageResId: Int? = null,
     private val regions: Set<String>? = null,
     private val dateIn: (year: Int) -> LocalDate,
 ) {
     NEW_YEARS_DAY(
         R.string.glance_holiday_new_year,
-        R.string.glance_cakey_new_year,
         dateIn = { LocalDate.of(it, Month.JANUARY, 1) },
     ),
     VALENTINES_DAY(
         R.string.glance_holiday_valentines,
-        R.string.glance_cakey_valentines,
         dateIn = { LocalDate.of(it, Month.FEBRUARY, 14) },
     ),
     ST_PATRICKS_DAY(
@@ -108,7 +101,6 @@ internal enum class Holiday(
     ),
     CHRISTMAS(
         R.string.glance_holiday_christmas,
-        R.string.glance_cakey_christmas,
         dateIn = { LocalDate.of(it, Month.DECEMBER, 25) },
     ),
     NEW_YEARS_EVE(
@@ -141,15 +133,6 @@ internal val GLANCE_ENCOURAGEMENTS = listOf(
 )
 
 /** Afternoon notes for Laura, one per day. */
-internal val CAKEY_NOTES = listOf(
-    R.string.cakey_smartspace_afternoon,
-    R.string.glance_cakey_note_1,
-    R.string.glance_cakey_note_2,
-    R.string.glance_cakey_note_3,
-    R.string.glance_cakey_note_4,
-    R.string.glance_cakey_note_5,
-    R.string.glance_cakey_note_6,
-)
 
 internal fun holidayOn(date: LocalDate, region: String): Holiday? = Holiday.entries.firstOrNull { it.isOn(date, region) }
 
@@ -160,28 +143,14 @@ internal fun holidayOn(date: LocalDate, region: String): Holiday? = Holiday.entr
  */
 internal fun selectGlanceMessage(
     now: LocalDateTime,
-    isCakey: Boolean,
     region: String,
 ): GlanceMessage {
     val date = now.toLocalDate()
-    if (isCakey) {
-        CAKEY_SPECIAL_DATES.firstOrNull { it.monthDay == MonthDay.from(date) }?.let {
-            return GlanceMessage(GlanceMessageKind.CAKEY_SPECIAL_DAY, it.messageResId)
-        }
-    }
     holidayOn(date, region)?.let { holiday ->
-        val resId = holiday.cakeyMessageResId?.takeIf { isCakey } ?: holiday.messageResId
+        val resId = holiday.messageResId
         return GlanceMessage(GlanceMessageKind.HOLIDAY, resId)
     }
     val day = date.toEpochDay()
-    if (isCakey) {
-        return when (now.hour) {
-            in 5..11 -> GlanceMessage(GlanceMessageKind.CAKEY_GREETING, R.string.cakey_smartspace_morning)
-            in 12..17 -> GlanceMessage(GlanceMessageKind.CAKEY_NOTE, CAKEY_NOTES.rotating(day))
-            in 18..21 -> GlanceMessage(GlanceMessageKind.CAKEY_GREETING, R.string.cakey_smartspace_evening)
-            else -> GlanceMessage(GlanceMessageKind.CAKEY_GREETING, R.string.cakey_smartspace_night)
-        }
-    }
     // Alternate quotes and encouragement so neither repeats for two weeks.
     val cycle = Math.floorDiv(day, 2L)
     return if (Math.floorMod(day, 2L) == 0L) {

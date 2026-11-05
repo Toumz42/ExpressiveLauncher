@@ -18,7 +18,6 @@ import androidx.recyclerview.widget.RecyclerView
 import app.lawnchair.data.folderwidget.FolderWidgetStyleRepository
 import app.lawnchair.preferences2.PreferenceManager2
 import app.lawnchair.preferences2.firstCached
-import app.lawnchair.pro.ProManager
 import app.lawnchair.util.resolveFolderBackgroundColor
 import com.android.app.animation.Interpolators
 import com.android.launcher3.BubbleTextView
@@ -109,10 +108,9 @@ class FolderWidgetView @JvmOverloads constructor(
         styleObservationJob = scope.launch {
             combine(
                 FolderWidgetStyleRepository.INSTANCE.get(context).observe(info.id),
-                ProManager.INSTANCE.get(context).isPro,
                 prefs.folderColor.get(),
                 prefs.folderBackgroundOpacity.get(),
-            ) { storedStyle, isPro, _, opacity ->
+            ) { storedStyle,  _, opacity ->
                 val defaults = FolderWidgetDefaults(
                     backgroundColor = resolveFolderBackgroundColor(context),
                     backgroundOpacity = opacity,
@@ -120,7 +118,7 @@ class FolderWidgetView @JvmOverloads constructor(
                         resources.getDimension(android.R.dimen.system_app_widget_background_radius)
                     }.getOrDefault(0f),
                 )
-                storedStyle.resolve(isPro, defaults)
+                storedStyle.resolve(defaults)
             }.collect { resolvedStyle ->
                 applyStyle(resolvedStyle)
             }
@@ -335,7 +333,7 @@ class FolderWidgetView @JvmOverloads constructor(
             backgroundOpacity = PreferenceManager2.getInstance(context).folderBackgroundOpacity.firstCached(),
             cornerRadiusPx = resources.getDimension(android.R.dimen.system_app_widget_background_radius),
         )
-        return FolderWidgetStyle().resolve(ProManager.INSTANCE.get(context).isPro.value, defaults)
+        return FolderWidgetStyle().resolve(defaults)
     }
 
     internal fun metrics(spanX: Int, spanY: Int = currentSpanY()): FolderWidgetMetrics {
