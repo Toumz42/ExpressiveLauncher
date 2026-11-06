@@ -144,14 +144,16 @@ public class PackageManagerHelper {
 
     // Lawnchair
     public static Intent getStyleWallpapersIntent(Context context) {
-        return getStyleWallpapersAltIntent(context);
+        return new Intent(Intent.ACTION_SET_WALLPAPER).setComponent(
+            new ComponentName(context.getString(R.string.wallpaper_picker_package),
+                "com.android.customization.picker.CustomizationPickerActivity"));
     }
 
     // Lawnchair
     public static Intent getStyleWallpapersAltIntent(Context context) {
         return new Intent(Intent.ACTION_SET_WALLPAPER).setComponent(
             new ComponentName(context.getString(R.string.wallpaper_picker_package_alt),
-                "com.android.customization.picker.CustomizationPickerActivity"));
+                "com.google.android.apps.wallpaper.picker.SetWallpaperAlias"));
     }
 
     /**

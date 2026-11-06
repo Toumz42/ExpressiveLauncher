@@ -43,7 +43,6 @@ import app.lawnchair.ui.preferences.components.AppItemPlaceholder
 import app.lawnchair.ui.preferences.components.layout.PreferenceLazyColumn
 import app.lawnchair.ui.preferences.components.layout.PreferenceScaffold
 import app.lawnchair.ui.preferences.components.layout.preferenceGroupItems
-import app.lawnchair.ui.preferences.pro.ProGate
 import app.lawnchair.util.App
 import app.lawnchair.util.appComparator
 import app.lawnchair.util.appsState

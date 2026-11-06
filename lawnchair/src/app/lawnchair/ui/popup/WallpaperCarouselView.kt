@@ -164,7 +164,7 @@ class WallpaperCarouselView @JvmOverloads constructor(
             )
         }
         return CardView(context).apply {
-            radius = Themes.getDialogCornerRadius(context) / 2
+            radius = Themes.getDialogCornerRadius(context) * 2
             contentDescription = label
             isClickable = true
             isFocusable = true
@@ -277,7 +277,7 @@ class WallpaperCarouselView @JvmOverloads constructor(
             )
             background = GradientDrawable().apply {
                 setColor(Color.argb(168, 0, 0, 0))
-                cornerRadius = 12 * density
+                cornerRadius = 96 * density
             }
         }
         cardView.addView(
@@ -373,11 +373,18 @@ class WallpaperCarouselView @JvmOverloads constructor(
     }
 
     private fun openWallpaperPicker() {
-        val explicitPicker = PackageManagerHelper.getStyleWallpapersIntent(context)
+        val aospPicker = PackageManagerHelper.getStyleWallpapersIntent(context)
+        val googlePicker = PackageManagerHelper.getStyleWallpapersAltIntent(context)
+        val pkgAospPicker = Intent(Intent.ACTION_SET_WALLPAPER).setPackage(context.getString(R.string.wallpaper_picker_package))
+        val pkgGooglePicker = Intent(Intent.ACTION_SET_WALLPAPER).setPackage(context.getString(R.string.wallpaper_picker_package_alt))
         val fallbackPicker = Intent(Intent.ACTION_SET_WALLPAPER)
-        val intent = listOf(explicitPicker, fallbackPicker).firstOrNull {
+
+        val candidates = listOf(googlePicker, aospPicker, pkgAospPicker, pkgGooglePicker, fallbackPicker)
+        val intent = candidates.firstOrNull {
             it.resolveActivity(context.packageManager) != null
         }
+
+
         if (intent == null || runCatching { context.startActivity(intent) }.isFailure) {
             Toast.makeText(context, R.string.wallpaper_picker_unavailable, Toast.LENGTH_SHORT).show()
         }

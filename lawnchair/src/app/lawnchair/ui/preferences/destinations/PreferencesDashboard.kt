@@ -297,11 +297,17 @@ fun PreferencesDashboard(
 }
 
 private fun launchWallpaperAndStyle(context: Context) {
-    val explicitPicker = PackageManagerHelper.getStyleWallpapersIntent(context)
+    val aospPicker = PackageManagerHelper.getStyleWallpapersIntent(context)
+    val googlePicker = PackageManagerHelper.getStyleWallpapersAltIntent(context)
+    val pkgAospPicker = Intent(Intent.ACTION_SET_WALLPAPER).setPackage(context.getString(R.string.wallpaper_picker_package))
+    val pkgGooglePicker = Intent(Intent.ACTION_SET_WALLPAPER).setPackage(context.getString(R.string.wallpaper_picker_package_alt))
     val fallbackPicker = Intent(Intent.ACTION_SET_WALLPAPER)
-    val intent = listOf(explicitPicker, fallbackPicker).firstOrNull {
+
+    val candidates = listOf(googlePicker, aospPicker, pkgGooglePicker, pkgAospPicker, fallbackPicker)
+    val intent = candidates.firstOrNull {
         it.resolveActivity(context.packageManager) != null
     }
+
     if (intent == null) {
         android.widget.Toast.makeText(
             context,
@@ -310,6 +316,11 @@ private fun launchWallpaperAndStyle(context: Context) {
         ).show()
         return
     }
+
+    if (context !is Activity) {
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+    }
+
     runCatching { context.startActivity(intent) }
         .onFailure {
             android.widget.Toast.makeText(

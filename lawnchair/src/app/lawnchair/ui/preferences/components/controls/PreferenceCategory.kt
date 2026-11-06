@@ -47,7 +47,6 @@ import androidx.compose.ui.unit.dp
 import app.lawnchair.ui.preferences.components.SystemSettingsHandoff
 import app.lawnchair.ui.preferences.components.SystemSettingsHandoffIcon
 import app.lawnchair.ui.preferences.components.layout.PreferenceTemplate
-import app.lawnchair.ui.preferences.pro.ProBadge
 import app.lawnchair.ui.theme.LawnchairTheme
 import app.lawnchair.ui.util.preview.PreviewLawnchair
 import com.android.launcher3.R
